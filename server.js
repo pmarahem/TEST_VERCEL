@@ -6,6 +6,16 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit'); 
+// PDF branding: use the transparent PNG, with legacy JPG support.
+function getPdfLogoPath() {
+    const candidates = ['logo.png', 'logo.jpg', 'logo.jpeg'];
+    for (const name of candidates) {
+        const candidate = path.join(__dirname, 'public', name);
+        if (fs.existsSync(candidate)) return candidate;
+    }
+    return path.join(__dirname, 'public', 'logo.png');
+}
+
 const app = express();
 
 // 🎯 Assigned dynamic platform routing port
@@ -4699,7 +4709,7 @@ app.post('/api/save-credit-note', async (req, res) => {
    const lines=Array.from(mapLines(note,invoice).values()).map(entry=>entry.line).sort((a,b)=>Number(a.SrNo)-Number(b.SrNo));
    const CreditNotePDFDocument = require('pdfkit');
    doc=new CreditNotePDFDocument({size:'A4',margin:40});const chunks=[];const ready=new Promise((resolve,reject)=>{doc.on('data',c=>chunks.push(c));doc.on('end',()=>resolve(Buffer.concat(chunks)));doc.on('error',reject)});ready.catch(()=>{});
-   const logo=path.join(__dirname,'public','logo.jpg');if(fs.existsSync(logo))doc.image(logo,40,35,{fit:[290,43]});else doc.font('Helvetica-Bold').fontSize(14).text('CENTRAL AIRTECH A/C SYSTEMS',40,40,{width:310});
+   const logo=getPdfLogoPath();if(fs.existsSync(logo))doc.image(logo,40,35,{fit:[290,43]});else doc.font('Helvetica-Bold').fontSize(14).text('CENTRAL AIRTECH A/C SYSTEMS',40,40,{width:310});
    doc.fontSize(17).text('CREDIT NOTE',350,40,{width:205,align:'right'});doc.font('Helvetica').fontSize(9).text(`CN No: ${note.CNNumber} | Date: ${text(note.CreditDate).split('T')[0]}`,300,76,{width:255,align:'right'});
    doc.text(`Invoice No: ${note.InvoiceNo}`,300,91,{width:255,align:'right'});
    doc.font('Helvetica-Bold').fontSize(10).text(text(note.Customer),40,125,{width:280});let y=doc.y+8;
@@ -4848,11 +4858,11 @@ app.get('/api/print-invoice/:invoiceNo', async (req, res) => {
                 );
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -5367,11 +5377,11 @@ app.get('/api/print-co-proforma/:coNo', async (req, res) => {
                 );
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -5755,11 +5765,11 @@ app.post(['/api/co-report-full','/api/co-report-single'], async (req, res) => {
                 );
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -5962,11 +5972,11 @@ app.get('/api/print-quotation/:quotationNo', async (req, res) => {
                 );
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -6389,11 +6399,11 @@ app.get('/api/print-quotation-cover/:quotationNo', async (req, res) => {
                 );
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -6874,11 +6884,11 @@ app.get('/api/print-deliveryorder/:DONo', async (req, res) => {
         // ==========================================
         // COMPANY HEADER
         // ==========================================
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         const fallbackHeader = () => {
             doc.fillColor('#252e3d')
@@ -7403,10 +7413,10 @@ app.post('/api/generate-statement', async (req, res) => {
                 });
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -7871,11 +7881,11 @@ app.get('/api/generate-receipt-pdf', async (req, res) => {
                 });
         };
 
-        const localLogoPath = path.join(__dirname, 'public', 'logo.jpg');
+        const localLogoPath = getPdfLogoPath();
 
         const logoPath = fs.existsSync(localLogoPath)
             ? localLogoPath
-            : path.join(__dirname, 'public', 'logo.jpg');
+            : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
@@ -8257,9 +8267,9 @@ app.post('/api/generate-multi-receipt-pdf/:filename', async (req, res) => {
         doc.pipe(res);
 
         // --- START OF INTEGRATED HEADER LOGIC ---
-        const logoPath = fs.existsSync(path.join(__dirname, 'public', 'logo.jpg')) 
-          ? path.join(__dirname, 'public', 'logo.jpg') 
-          : path.join(__dirname, 'public', 'logo.jpg');
+        const logoPath = fs.existsSync(getPdfLogoPath()) 
+          ? getPdfLogoPath() 
+          : getPdfLogoPath();
 
         if (fs.existsSync(logoPath)) {
             try {
