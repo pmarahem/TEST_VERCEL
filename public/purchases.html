@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Airtech ERP |Purchases Ledger</title>
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css" />
+    
+
+<link rel="stylesheet" href="/dashboard-refresh.css"><link rel="stylesheet" href="/invoices-refresh.css"><script src="/dashboard-refresh.js"></script>
+</head>
+<body class="invoices-page purchases-page invoice-redesign">
+<!-- #region 📌 PURCHASE HEADER AND FILTER BAR-->
+<div class="sticky-top-container" style="padding: 2px; padding-top: 0px;">
+    <div class="invoice-toolbar d-flex justify-content-between align-items-center mb-1" style="padding: 3px; margin-top: 3px; background-color: #ffffff; gap: 15px;">            
+        
+        <!-- LEFT SIDE: Quotations Titles (width adjusted to auto/content-fit) -->
+        <div class="invoice-title-group d-flex align-items-center" style="background-color: #ffffff;">
+            <h3 class="fw-bold m-2" id="purchases-head" style="font-size: 18px; color: #018afa; padding-left: 4px; padding-top:1px;">Purchases</h3>
+            <h3 class="fw-bold m-2" id="purchases-head-mob" style="font-size: 15px; color: #018afa; padding-left: 4px; padding-top:1px;">Purchases</h3>
+                <button type="button" class="ledger-filter-toggle" aria-label="Hide filters" aria-controls="ledger-filters" aria-expanded="true" title="Hide filters"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 5-5 5 5"/></svg></button>
+            <div style="padding-top:3px;">
+                <h3 class="fw-bold" id="purchases-head-date" style="font-size: 12px; color: #f201fa; padding-left: 4px; margin: 0;">date</h3>
+            </div>
+        </div>
+         
+        <!-- RIGHT SIDE: Search Filter Bar (width changed to flex-grow/auto) -->
+        <div id="ledger-filters" class="invoice-filters filter-card d-flex align-items-center" style="flex: 0.70; justify-content: flex-end; gap: 5px;">
+            
+            <div style="flex: 0.40;">
+                        <!-- <label for="search-purchases-bill" style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">BILL</label> -->
+                        <input type="text" id="search-purchases-bill" class="form-control form-control-sm" style="background-color: #fff; color: #000000; border: 1px solid #000000;" placeholder="Bill #">
+                    </div>
+            
+            <div style="flex: 0.7; min-width: 100px;">
+                <input type="text" id="search-purchases-customer" aria-label="Search customer or invoice number" class="form-control form-control-sm" style="text-transform: uppercase; background-color: #fff; color: #000000; border: 1px solid #018afa;" placeholder="Company or Pur#">
+            </div>
+             <!-- purchases STATUS -->
+                    <div style="flex: 0.40;">
+                        <!-- <label style="font-size: 9px; font-weight: 400; color: #000000; margin-bottom: 2px; display: block;">Status</label> -->
+                        <select id="filter-purchases-status" aria-label="Invoice status" class="form-control form-control-sm " style="background-color: #fff; color: #000000; border: 1px solid #000000;">
+                            <option value="ALL">All</option>
+                            <option value="PAID">Paid</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="PDC">PDC</option>
+                            <option value="ADV PAID">Adv. Paid</option>
+                        </select>
+                    </div>
+            
+            <!-- DATE RANGE -->
+            <div style="flex: 0.55; min-width: 100px;">
+                <select id="filter-purchases-range" aria-label="Date range" class="form-control form-control-sm" style="background-color: #fff; color: #000000; border: 1px solid #018afa;">
+                    <option value="3MONTH" selected>Last 3 Months</option>
+                    <option value="CURRENT_MONTH">Current Month</option>
+                    <option value="LAST_MONTH">Last Month</option>
+                    <option value="2MONTH">Last 2 Months</option>
+                    <option value="6MONTH">Last 6 Months</option>
+                    <option value="CURRENT_YEAR">Current Year</option>
+                    <option value="FULL">All History</option>
+                </select>
+            </div>
+
+            <!-- From Picker -->
+            <div style="flex: 0.35">
+                <input type="date" id="filter-purchases-start-date" aria-label="From date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+        
+            <!-- To Picker -->
+            <div style="flex: 0.35">
+                <input type="date" id="filter-purchases-end-date" aria-label="To date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+
+            <!-- Action Buttons Box -->
+            <div class="invoice-filter-actions d-flex" style="gap: 5px;">
+                <button id="btn-purchases-reset" class="btn btn-sm btn-danger fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Reset</button>
+                <button id="btn-purchases-search" class="btn btn-sm btn-primary fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Search</button>
+            </div>
+            <!-- ROUND AVATAR CONTAINER -->
+            
+        </div>
+    </div>
+    </div>
+
+
+    <div id="purchases-loading-overlay">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Please wait... Accessing data records from Cloud...
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌  Purchases TABLE-->
+    <div class="table-card" id="purchases-table-display-block">
+        <div class="table-responsive" style="max-height: calc(100vh - 108px); overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover table-dense m-0" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th class="col-width-id" style="text-align: center;">ID</th>
+                        <th>Pur. No</th>
+                        <th>BILL Date</th>
+                        <th>BILL No</th>
+                        <th style="text-align: center;">Company Name</th>
+                        <th style="text-align: center;">Description</th>
+                        <th style="text-align: center;">Bill Amount</th>
+                        <th style="text-align: center;">Paid Amount</th>
+                        <th style="text-align: center;">Balance</th>
+                        
+                        <th style="text-align: center;">Pay Mode</th>
+                        <th style="text-align: center;">Pay Date</th>
+                        <th style="text-align: center;">Status</th>
+                        <th>User</th>
+                        
+                    </tr>
+                </thead>
+                <tbody id="purchases-rows" style="font-size: 10px; font-weight: 500; color: rgb(15, 4, 165);">
+                    <tr><td colspan="13" class="text-center text-muted py-3">Click Query to load accounting matrix records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 EDIT PURCHASES RIGHT-CLICK CONTEXT MENU-->
+    <div id="purchases-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 1050; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <div class="purchases-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit Purchase</div>
+        <div class="purchases-context-item" data-action="PAYMENT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Payment</div>
+        <div class="purchases-context-item" data-action="STATEMENT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Statement</div>
+        <div class="purchases-context-item" data-action="DELETE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Delete Purchase</div>    
+
+    </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .purchases-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .purchases-rows-highlight-context {background-color: #d1ecf1 !important; /* Fast layout color */ }
+    </style>
+<!-- #endregion -->    
+
+<script src="to_words_lib.js"></script>
+<script src="common.js" defer></script>
+
+<script>
+// Mobile-only filter visibility; filter values and existing handlers stay intact.
+(() => {
+  const button = document.querySelector('.ledger-filter-toggle');
+  const filters = document.getElementById('ledger-filters');
+  if (!button || !filters) return;
+  const smallScreen = window.matchMedia('(max-width: 767px)');
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle('ledger-filters-collapsed', collapsed);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? 'Show filters' : 'Hide filters');
+    button.title = collapsed ? 'Show filters' : 'Hide filters';
+  }
+  button.addEventListener('click', () => {
+    if (smallScreen.matches) setCollapsed(!document.body.classList.contains('ledger-filters-collapsed'));
+  });
+  smallScreen.addEventListener('change', () => setCollapsed(smallScreen.matches));
+  setCollapsed(smallScreen.matches);
+})();
+</script>
+
+</body>
+</html>

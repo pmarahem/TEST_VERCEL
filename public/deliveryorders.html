@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Airtech ERP |Delivery Orders Ledger</title>
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css" />
+    
+<link rel="stylesheet" href="/dashboard-refresh.css"><link rel="stylesheet" href="/invoices-refresh.css"><script src="/dashboard-refresh.js"></script>
+</head>
+<body class="invoices-page deliveryorders-page invoice-redesign">
+<!-- #region 📌 DO HEADER AND FILTER BAR-->
+ <div class="sticky-top-container" style="padding: 2px; padding-top: 0px;">
+    <!-- Parent flex container: justifies items between left and right -->
+    <div class="invoice-toolbar d-flex justify-content-between align-items-center mb-1" style="padding: 3px; margin-top: 3px; background-color: #ffffff; gap: 15px;">            
+        
+        <!-- LEFT SIDE: DO Titles (width adjusted to auto/content-fit) -->
+        <div class="invoice-title-group d-flex align-items-center" style="background-color: #ffffff;">
+            <h3 class="fw-bold m-2" id="do-head" style="font-size: 18px; color: #018afa; padding-left: 4px; padding-top:1px;">Delivery Orders</h3>
+            <h3 class="fw-bold m-2" id="do-head-mob" style="font-size: 15px; color: #018afa; padding-left: 4px; padding-top:1px;">Delivery Orders</h3>
+                <button type="button" class="ledger-filter-toggle" aria-label="Hide filters" aria-controls="ledger-filters" aria-expanded="true" title="Hide filters"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 5-5 5 5"/></svg></button>
+            <div style="padding-top:3px;">
+                <h3 class="fw-bold" id="do-head-date" style="font-size: 12px; color: #f201fa; padding-left: 4px; margin: 0;"></h3>
+            </div>
+        </div>
+         
+        <!-- RIGHT SIDE: Search Filter Bar (width changed to flex-grow/auto) -->
+        <div id="ledger-filters" class="invoice-filters filter-card d-flex align-items-center" style="flex: 0.7; justify-content: flex-end; gap: 10px;">
+            <div style="flex: 0.7; min-width: 90px;">
+                <input type="text" id="search-do-customer" aria-label="Search customer or delivery order number" class="form-control form-control-sm" style="text-transform: uppercase; background-color: #fff; color: #000000; border: 1px solid #018afa;" placeholder="Customer / DO No">
+            </div>
+            
+            <!-- DATE RANGE -->
+            <div style="flex: 0.55; min-width: 90px;">
+                <select id="filter-do-range" aria-label="Date range" class="form-control form-control-sm" style="background-color: #fff; color: #000000; border: 1px solid #018afa;">
+                    <option value="3MONTH" selected>Last 3 Months</option>
+                    <option value="CURRENT_MONTH">Current Month</option>
+                    <option value="LAST_MONTH">Last Month</option>
+                    <option value="2MONTH">Last 2 Months</option>
+                    <option value="6MONTH">Last 6 Months</option>
+                    <option value="CURRENT_YEAR">Current Year</option>
+                    <option value="FULL">All History</option>
+                </select>
+            </div>
+
+            <!-- From Picker -->
+            <div style="flex: 0.40">
+                <input type="date" id="filter-do-start-date" aria-label="From date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+        
+            <!-- To Picker -->
+            <div style="flex: 0.40">
+                <input type="date" id="filter-do-end-date" aria-label="To date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+
+            <!-- Action Buttons Box -->
+            <div class="invoice-filter-actions d-flex" style="gap: 5px;">
+                <button id="btn-do-reset" class="btn btn-sm btn-danger fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Reset</button>
+                <button id="btn-do-search" class="btn btn-sm btn-primary fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Search</button>
+            </div>
+            <!-- ROUND AVATAR CONTAINER -->
+            
+        </div>
+    </div>
+</div>
+
+    <div id="do-loading-overlay">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Please wait... Accessing data records from Microsoft SQL Server...
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌  DO TABLE-->
+    <div class="table-card" id="do-table-display-block">
+        <div class="table-responsive" style="max-height: calc(100vh - 108px); overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover table-dense m-0">
+                <thead>
+                    <tr>
+                        <th class="col-width-id" style="text-align: center;">ID</th> 
+                        <th style="text-align: center; width: 35px;" >DO NO</th>
+                        <th style="text-align: center; width: 35px;">DO Date</th>
+                        <th class="col-width-sd" style="text-align: center;">INV NO</th>
+                        <th class="col-width-sd" style="text-align: center;">LPO NO</th>
+                        <th class="col-width-customer" style="text-align: center;">Customer Name</th>
+                        <th class="col-width-md"  style="text-align: center;">Emirate</th>
+                        <th class="col-width-sd"  style="text-align: center;">Delivery Date</th>
+                        <th class="col-width-sm" style="text-align: center;">User</th>
+                        
+                    </tr>
+                </thead>
+                <tbody id="do-rows" style="font-size: 10px; font-weight: 500; color: rgb(15, 4, 165);">
+                    <tr><td colspan="13" class="text-center text-muted py-3">Click Query to load accounting matrix records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 EDIT DO RIGHT-CLICK CONTEXT MENU-->
+    <div id="do-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 1050; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <!-- <div class="do-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit Quote</div> -->
+        <!-- <div class="do-context-item" data-action="PRINT WITH COVERING LETTER" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Print With Covering Letter</div> -->
+        <div class="do-context-item" data-action="PRINT DO" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Print DO</div>
+        <!-- <div class="do-context-item" data-action="CREATE INVOICE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Create Invoice</div>     -->
+        <!-- <div class="do-context-item" data-action="CREATE CO" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Create CO</div>     -->
+
+    </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .do-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .do-rows-highlight-context {background-color: #d1ecf1 !important; /* Fast layout color */ }
+    </style>
+<!-- #endregion -->    
+
+<script src="to_words_lib.js"></script>
+<script src="common.js" defer></script>
+
+<script>
+// Mobile-only filter visibility; filter values and existing handlers stay intact.
+(() => {
+  const button = document.querySelector('.ledger-filter-toggle');
+  const filters = document.getElementById('ledger-filters');
+  if (!button || !filters) return;
+  const smallScreen = window.matchMedia('(max-width: 767px)');
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle('ledger-filters-collapsed', collapsed);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? 'Show filters' : 'Hide filters');
+    button.title = collapsed ? 'Show filters' : 'Hide filters';
+  }
+  button.addEventListener('click', () => {
+    if (smallScreen.matches) setCollapsed(!document.body.classList.contains('ledger-filters-collapsed'));
+  });
+  smallScreen.addEventListener('change', () => setCollapsed(smallScreen.matches));
+  setCollapsed(smallScreen.matches);
+})();
+</script>
+
+</body>
+</html>

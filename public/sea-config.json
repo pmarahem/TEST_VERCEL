@@ -1,0 +1,7 @@
+{
+  "main": "dist/bundled-server.js",
+  "output": "sea-prep.blob",
+  "disableSentinel": true,
+  "useCodeCache": true,
+  "execArgv": ["--no-warnings"]
+}

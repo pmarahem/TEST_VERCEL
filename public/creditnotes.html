@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Airtech ERP |Credit Notes Ledger</title>
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css" />
+    
+
+<link rel="stylesheet" href="/dashboard-refresh.css"><link rel="stylesheet" href="/invoices-refresh.css"><script src="/dashboard-refresh.js"></script>
+</head>
+<body class="invoices-page cn-page invoice-redesign">
+<!-- #region 📌 CREDIT NOTE HEADER AND FILTER BAR-->
+
+<div class="sticky-top-container" style="padding: 2px; padding-top: 0px;">
+    <!-- Parent flex container: justifies items between left and right -->
+    <div class="invoice-toolbar d-flex justify-content-between align-items-center mb-1" style="padding: 3px; margin-top: 3px; background-color: #ffffff; gap: 15px;">            
+        
+        <!-- LEFT SIDE: Quotations Titles (width adjusted to auto/content-fit) -->
+        <div class="invoice-title-group d-flex align-items-center" style="background-color: #ffffff;">
+            <h3 class="fw-bold m-2" id="cn-head" style="font-size: 18px; color: #018afa; padding-left: 4px; padding-top:1px;">Credit Notes</h3>
+            <h3 class="fw-bold m-2" id="cn-head-mob" style="font-size: 15px; color: #018afa; padding-left: 4px; padding-top:1px;">Credit Notes</h3>
+                <button type="button" class="ledger-filter-toggle" aria-label="Hide filters" aria-controls="ledger-filters" aria-expanded="true" title="Hide filters"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 5-5 5 5"/></svg></button>
+            <div style="padding-top:3px;">
+                <h3 class="fw-bold" id="cn-head-date" style="font-size: 12px; color: #f201fa; padding-left: 4px; margin: 0;">date</h3>
+            </div>
+        </div>
+         
+        <!-- RIGHT SIDE: Search Filter Bar (width changed to flex-grow/auto) -->
+        <div id="ledger-filters" class="invoice-filters filter-card d-flex align-items-center" style="flex: 0.65; justify-content: flex-end; gap: 10px;">
+            <div style="flex: 0.6; min-width: 90px;">
+                <input type="text" id="search-cn-customer" aria-label="Search customer or CN number" class="form-control form-control-sm" style="text-transform: uppercase; background-color: #fff; color: #000000; border: 1px solid #018afa;" placeholder="Customer or CN#">
+            </div>
+            <!-- CN STATUS -->
+                    <div style="flex: 0.40;">
+                        <!-- <label style="font-size: 9px; font-weight: 400; color: #000000; margin-bottom: 2px; display: block;">Status</label> -->
+                        <select id="filter-cn-status" aria-label="Invoice status" class="form-control form-control-sm " style="background-color: #fff; color: #000000; border: 1px solid #000000;">
+                            <option value="ALL">All</option>
+                            <option value="PAID">Paid</option>
+                            <option value="INVOICE PAID">InvoicePaid</option>
+                            <option value="CREDIT">Credit</option>
+                        </select>
+                    </div>
+            
+            <!-- DATE RANGE -->
+            <div style="flex: 0.45; min-width: 90px;">
+                <select id="filter-cn-range" aria-label="Date range" class="form-control form-control-sm" style="background-color: #fff; color: #000000; border: 1px solid #018afa;">
+                    <option value="3MONTH" selected>Last 3 Months</option>
+                    <option value="CURRENT_MONTH">Current Month</option>
+                    <option value="LAST_MONTH">Last Month</option>
+                    <option value="2MONTH">Last 2 Months</option>
+                    <option value="6MONTH">Last 6 Months</option>
+                    <option value="CURRENT_YEAR">Current Year</option>
+                    <option value="FULL">All History</option>
+                </select>
+            </div>
+
+            <!-- From Picker -->
+            <div style="flex: 0.40">
+                <input type="date" id="filter-cn-start-date" aria-label="From date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+        
+            <!-- To Picker -->
+            <div style="flex: 0.40">
+                <input type="date" id="filter-cn-end-date" aria-label="To date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+
+            <!-- Action Buttons Box -->
+            <div class="invoice-filter-actions d-flex" style="gap: 5px;">
+                <button id="btn-cn-reset" class="btn btn-sm btn-danger fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Reset</button>
+                <button id="btn-cn-search" class="btn btn-sm btn-primary fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Search</button>
+            </div>
+            <!-- ROUND AVATAR CONTAINER -->
+            
+        </div>
+    </div>
+</div>
+
+    <div id="cn-loading-overlay">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Please wait... Accessing data records from Cloud...
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌  CREDIT NOTE TABLE-->
+    <div class="table-card" id="cn-table-display-block">
+        <div class="table-responsive" style="max-height: calc(100vh - 108px); overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover table-dense m-0" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th class="col-width-id">ID</th>
+                        <th>CN#</th>
+                        <th>CN Date</th>
+                        <th>LPO No</th>
+                        <th>Inv No</th>
+                        <th>Inv Date</th>
+                        <th>Customer Name</th>
+                        <th>Emirate</th>
+                        <th>Amount</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Paid Inv No</th>
+                        <th>Paid Inv Date</th>
+                        <th>Pay Type</th>
+                        <th>Chq. No</th>
+                    </tr>
+                </thead>
+                <tbody id="cn-rows" style="font-size: 10px; font-weight: 500; color: rgb(15, 4, 165);">
+                    <tr><td colspan="13" class="text-center text-muted py-3">Click Query to load accounting matrix records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 EDIT CN RIGHT-CLICK CONTEXT MENU-->
+    <div id="cn-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 1050; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <div class="cn-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit CN</div>
+        <div class="cn-context-item" data-action="PRINT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Print CN</div>
+        <div class="cn-context-item" data-action="DELETE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Delete CN</div>    
+    </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .cn-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .cn-rows-highlight-context {background-color: #d1ecf1 !important; /* Fast layout color */ }
+    </style>
+<!-- #endregion -->    
+
+<div class="global-modal"  id="editcn-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99999; align-items: center; justify-content: center; display: none;">
+     <div style="background: #ffffff; padding: 0; width: 95%; max-width: 95vw; height: 85%; max-height: 85vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- CREDIT Modal Header Layout -->
+            <div id="editcn-modal-head" style="background: #020ebd; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="editcn-modal-title">Credit Note</h4>
+                    <span id="editcn-countdown-seconds" style="color: #ffffff; display: none;">30</span>
+
+                <div style="display: flex; justify-content: flex-end; gap: 18px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">
+                <button type="button" id="btn-save-editcn-note" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" style="color: white;">Update</button>
+                <button type="button" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button>
+                    
+                </div>
+            </div>
+           
+            <!--CREDIT Master Metadata Entry Form fields -->
+            <form class="global-master-form"  id="editcn-note-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!--CREDIT First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div style="flex: 3.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER NAME</label>
+                        <input type="text" id="editcn-customer" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none" id="editcn-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+                    </div>
+
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">POSTBOX</label>
+                        <input type="text" id="editcn-postbox" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <!-- EMIRATE SELECTOR -->
+                    <div style="flex: 0.67">
+                    <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATES</label>
+                    <select id="editcn-emirate" class="form-control form-control-sm " style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                        <option value="ABU DHABI">ABU DHABI</option>
+                        <option value="AJMAN">AJMAN</option>
+                        <option value="DUBAI">DUBAI</option>
+                        <option value="FUJAIRAH">FUJAIRAH</option>
+                        <option value="RAK">RAK</option>
+                        <option value="SHARJAH">SHARJAH</option>
+                        <option value="UAQ">UAQ</option>
+                    </select>
+                    </div>
+
+                    <div style="flex: 1.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ADDRESS</label>
+                        <input type="text" id="editcn-address" class="form-control form-control-sm" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+                    
+                    <div style="flex: 0.70;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT NUMBER</label>
+                        <input type="text" id="editcn-vat-no" class="form-control form-control-sm" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+                                        
+                    
+<!-- 
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">C N NUMBER</label>
+                        <input type="text" id="editcn-invoice-number" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #f80303" required readonly>
+                    </div>                     -->
+            </div>
+
+                <!--CREDIT Second Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                <div style="flex: 0.65;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">C N DATE</label>
+                        <input type="date" id="editcn-date" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; border: 1px solid red;" required>
+                    </div>
+
+                <div style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">LPO NUMBER</label>
+                        <input type="text" id="editcn-lpo" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                 <div style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CO NUMBER</label>
+                        <input type="text" id="editcn-co-no" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+                    
+                <div style="flex: 0.75;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INVOICE NO</label>
+                        <input type="text" id="editcn-invoice-no" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.65;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INVOICE DATE</label>
+                        <input type="date" id="editcn-invoice-date" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; border: 1px solid #03a3ff;"required>
+                    </div>
+                    <div style="flex: 3.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">NOTES</label>
+                        <input type="text" id="editcn-notes" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid red;" >
+                    </div>
+                    
+
+                                 
+            </div>
+
+                <!-- CREDIT THIRD Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                   <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SUB TOTAL</label>
+                        <input type="text" value="0.00" id="editcn-taxable-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT TOTAL</label>
+                        <input type="text" value="0.00" id="editcn-total-vat" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">GRAND TOTAL</label>
+                        <input type="text" value="0.00" id="editcn-grand-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAID</label>
+                        <input type="text" value="0.00" id="editcn-paid-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">BALANCE</label>
+                        <input type="text" value="0.00" id="editcn-balance-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.67">
+                    <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">STATUS</label>
+                    <select id="editcn-status" value="CREDIT" class="form-control form-control-sm " style=" padding: 0 0 0 2px; color: #000000; border: 1px solid #03a3ff;">
+                        <option value="CREDIT">CREDIT</option>
+                        <option value="PAID">PAID</option>
+                        
+                    </select>
+                    </div>
+
+                    <div style="flex: 0.67">
+                    <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT TYPE</label>
+                    <select id="editcn-payment-type" value="" class="form-control form-control-sm " style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                        <option value="">SELECT</option>
+                        <option value="CASH">CASH</option>
+                        <option value="BANK TRANSFER">BANK TRANSFER</option>
+                        <option value="CHEQUE">CHEQUE</option>
+                        <option value="BANK CARD">BANK CARD</option>
+                    </select>
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT DATE</label>
+                        <input type="date" value="" id="editcn-deldate" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black;color-scheme: dark;  border: 1px solid #03a3ff;">
+                    </div> 
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CHQ. NO.</label>
+                        <input type="text" value="-" id="editcn-unit-price" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAID INV. NO.</label>
+                        <input type="text" value="" id="editcn-discount" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                                   
+            </div>
+       
+                <!--CREDIT FOURTH Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+                    <div style="flex: 5.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMOUNT IN WORDS</label>
+                        <input type="text" placeholder="AMOUNT IN WORDS DISPLAY HERE........" id="editcn-amount-in-words" class="form-control form-control-sm" style="text-align: center; padding: 0 0 0 2px;font-size: 11px; font-weight: 500;  background-color: #949393; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+                     <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">C N NUMBER</label>
+                        <input type="text" placeholder="AUTO CREATE" id="editcn-number" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #03a3ff">
+                    </div> 
+            </div>
+                
+
+                <!-- 📊 CREDIT BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="editcn-parent" style="max-height: 280px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="editcn-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead><tr><th>ID</th><th>Sr#</th><th>Item</th><th>Qty</th><th>CN Qty</th><th>Max Qty</th><th>Unit Price</th><th>Disc%</th><th>VAT%</th><th>Taxable</th><th>VAT Total</th><th>Unit Total</th><th>PID</th><th>Stock</th><th>ICost</th><th>UCost</th><th>SValue</th><th>Action</th></tr></thead>
+                            <tbody id="editcn-note-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<script src="to_words_lib.js"></script>
+<script src="common.js" defer></script>
+
+<script>
+// Mobile-only filter visibility; filter values and existing handlers stay intact.
+(() => {
+  const button = document.querySelector('.ledger-filter-toggle');
+  const filters = document.getElementById('ledger-filters');
+  if (!button || !filters) return;
+  const smallScreen = window.matchMedia('(max-width: 767px)');
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle('ledger-filters-collapsed', collapsed);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? 'Show filters' : 'Hide filters');
+    button.title = collapsed ? 'Show filters' : 'Hide filters';
+  }
+  button.addEventListener('click', () => {
+    if (smallScreen.matches) setCollapsed(!document.body.classList.contains('ledger-filters-collapsed'));
+  });
+  smallScreen.addEventListener('change', () => setCollapsed(smallScreen.matches));
+  setCollapsed(smallScreen.matches);
+})();
+</script>
+
+</body>
+</html>

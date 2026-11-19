@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Airtech ERP |Clients Ledger</title>
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css" />
+    
+
+<link rel="stylesheet" href="/dashboard-refresh.css"><link rel="stylesheet" href="/invoices-refresh.css"><script src="/dashboard-refresh.js"></script>
+</head>
+<body class="invoices-page client-page invoice-redesign">
+<!-- #region 📌 CUSTOMERES HEADER AND FILTER BAR-->
+
+<div class="sticky-top-container" style="padding: 2px; padding-top: 0px;">
+    <!-- Parent flex container: justifies items between left and right -->
+    <div class="invoice-toolbar d-flex justify-content-between align-items-center mb-1" style="padding: 3px; margin-top: 3px; background-color: #ffffff; gap: 15px;">            
+        
+        <!-- LEFT SIDE: Quotations Titles (width adjusted to auto/content-fit) -->
+        <div class="invoice-title-group d-flex align-items-center" style="background-color: #ffffff;">
+            <h3 class="fw-bold m-2" id="client-head" style="font-size: 18px; color: #018afa; padding-left: 4px; padding-top:1px;">Customers</h3>
+            <h3 class="fw-bold m-2" id="client-head-mob" style="font-size: 15px; color: #018afa; padding-left: 4px; padding-top:1px;">Customers</h3>
+                <button type="button" class="ledger-filter-toggle" aria-label="Hide filters" aria-controls="ledger-filters" aria-expanded="true" title="Hide filters"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 5-5 5 5"/></svg></button>
+            <div style="padding-top:3px;">
+                <h3 class="fw-bold" id="client-head-date" style="font-size: 12px; color: #f201fa; padding-left: 4px; margin: 0;">date</h3>
+            </div>
+        </div>
+         
+        <!-- RIGHT SIDE: Search Filter Bar (width changed to flex-grow/auto) -->
+        <div id="ledger-filters" class="invoice-filters filter-card d-flex align-items-center" style="flex: 0.65; justify-content: flex-end; gap: 10px;">
+            <div style="flex: 0.6; min-width: 90px;">
+                <input type="text" id="search-client-customer" aria-label="Search customer or emirate" class="form-control form-control-sm" style="text-transform: uppercase; background-color: #fff; color: #000000; border: 1px solid #018afa;" placeholder="Customer name or Emirate">
+            </div>
+           
+            <!-- Action Buttons Box -->
+            <div class="invoice-filter-actions d-flex" style="gap: 5px;">
+                <button id="btn-client-reset" class="btn btn-sm btn-danger fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Reset</button>
+                <button id="btn-client-search" class="btn btn-sm btn-primary fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Search</button>
+            </div>
+            <!-- ROUND AVATAR CONTAINER -->
+            
+        </div>
+    </div>
+</div>
+
+
+  
+
+    <div id="client-loading-overlay">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Please wait... Accessing data records from Microsoft SQL Server...
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌  CLIENT TABLE-->
+    <div class="table-card" id="client-table-display-block">
+        <div class="table-responsive" style="max-height: calc(100vh - 108px); overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover table-dense m-0" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th class="col-width-cid">ID</th>
+                        <th>Customer Name</th>                        
+                        <th>Emirate</th>
+                        <!-- <th>Address</th> -->
+                        <!-- <th>VAT ID</th> -->
+                        <th>Email</th>
+                        <th>Contact Person</th>
+                        <th>Office No</th>
+                        <th>Mobile No</th>
+                       
+                        
+                    </tr>
+                </thead>
+                <tbody id="client-rows" style="font-size: 10px; font-weight: 500; color: rgb(15, 4, 165);">
+                    <tr><td colspan="13" class="text-center text-muted py-3">Click Query to load accounting matrix records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 EDIT CO RIGHT-CLICK CONTEXT MENU-->
+    <div id="client-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 1050; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <div class="client-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit Client</div>
+ 
+    </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .client-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .client-rows-highlight-context {background-color: #d1ecf1 !important; /* Fast layout color */ }
+    </style>
+<!-- #endregion -->    
+
+<script src="to_words_lib.js"></script>
+<script src="common.js" defer></script>
+
+<script>
+// Mobile-only filter visibility; filter values and existing handlers stay intact.
+(() => {
+  const button = document.querySelector('.ledger-filter-toggle');
+  const filters = document.getElementById('ledger-filters');
+  if (!button || !filters) return;
+  const smallScreen = window.matchMedia('(max-width: 767px)');
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle('ledger-filters-collapsed', collapsed);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? 'Show filters' : 'Hide filters');
+    button.title = collapsed ? 'Show filters' : 'Hide filters';
+  }
+  button.addEventListener('click', () => {
+    if (smallScreen.matches) setCollapsed(!document.body.classList.contains('ledger-filters-collapsed'));
+  });
+  smallScreen.addEventListener('change', () => setCollapsed(smallScreen.matches));
+  setCollapsed(smallScreen.matches);
+})();
+</script>
+
+<div class="global-modal" id="newcust-modal-overlay" style="margin: 0; position: fixed; top: 0; left: max(10%, 160px); width: calc(100vw - max(10%, 160px)); height: 100vh; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; display: none;">
+     <div style="background: #ffffff; padding: 0; width: 60.5%; max-width: 60.5vw; height: 70%; max-height: 70vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">            
+            <!-- Modal Header Layout -->
+            <div style="background: #630181; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="newcust-modal-title">Edit Customer</h4>
+                <div style="display: flex; justify-content: flex-end; gap: 30px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">
+                    <span class="countdown-seconds" id="newcust-countdown-seconds" style="color: #ffffff; display: none;">30</span>
+                    <button type="button" id="btn-save-newcust" class="btn btn-sm btn-success px-4 fw-bold shadow-sm">Update</button>
+                    <button type="button"  class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel ">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Master Metadata Entry Form fields -->
+            <form autocomplete="off" class="global-master-form" id="newcust-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">
+                                    <!-- TOP Action Controls bar alignment -->
+                
+
+                <!-- === FORM INPUTS STARTS HERE === -->
+                <!-- First Row Fields -->
+                <div style="display: flex; gap: 4px; width: 100%;">
+                    <div class="position-relative" style="flex: 3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">COMPANY NAME</label>
+                        <input type="text" placeholder="ENTER COMPANY NAME....." id="newcust-customer" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none global-autocomplete-results" id="newcust-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+                    </div>
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">POSTBOX</label>
+                        <input type="text" value="-" id="newcust-postbox" class="form-control form-control-sm text-uppercase global-postbox" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                    </div>
+                    <!-- Emirate Selector -->
+                    <div class="custom-combobox1 global-custom-combobox1" style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATE</label>
+                        <input type="text" value="ABU DHABI" placeholder="ENTER EMIRATE......" id="newcust-emirate" class="form-control form-control-sm text-uppercase global-emirate" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                            <ul id="newcust-emirate-combo-list" class="dropdown-list global-emirate-combo-list">
+                                <li data-value="ABU DHABI">ABU DHABI</li>
+                                <li data-value="AJMAN">AJMAN</li>
+                                <li data-value="DUBAI">DUBAI</li>
+                                <li data-value="FUJAIRAH">FUJAIRAH</li>
+                                <li data-value="RAK">RAK</li>
+                                <li data-value="SHARJAH">SHARJAH</li>
+                                <li data-value="UAQ">UAQ</li>
+                            </ul>
+                    </div>
+                
+                <!-- address Selector -->
+                    <div class="custom-combobox2  global-custom-combobox2" style="flex: 2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ADDRESS</label>
+                        <input type="text" value="MUSSAFAH 32, ABU DHABI" placeholder="ENTER ADDRESS......" id="newcust-address" class="form-control form-control-sm text-uppercase global-address" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                            <ul id="newcust-address-combo-list" class="dropdown-list global-address-combo-list">
+                                <li data-value="MOHAMMED BIN ZAYED CITY, ABU DHABI">MOHAMMED BIN ZAYED CITY, ABU DHABI</li>
+                                <li data-value="MUSSAFAH, ABU DHABI">MUSSAFAH 32, ABU DHABI</li>
+                                <li data-value="BANIYAS, ABU DHABI">BANIYAS, ABU DHABI</li>
+                                <li data-value="AL SHAMKHA, ABU DHABI">AL SHAMKHA, ABU DHABI</li>
+                                <li data-value="AL SHAHAMA, ABU DHABI">AL SHAHAMA, ABU DHABI</li>
+                                <li data-value="CITY, ABU DHABI">CITY, ABU DHABI</li>
+                                
+                                <li data-value="AJMAN">AJMAN</li>
+                                <li data-value="DEIRA, DUBAI">DEIRA, DUBAI</li>
+                                <li data-value="BURDUBAI, DUBAI">BURDUBAI, DUBAI</li>
+                                <li data-value="JABEL ALI, DUBAI">JABEL ALI, DUBAI</li>
+                                <li data-value="DIP, DUBAI">DIP, DUBAI</li>
+                                <li data-value="DIC, DUBAI">DIC, DUBAI</li>
+                                <li data-value="FUJAIRAH">FUJAIRAH</li>
+                                <li data-value="RAK">RAK</li>
+                                <li data-value="SHARJAH">SHARJAH</li>
+                                <li data-value="UAQ">UAQ</li>
+                            </ul>
+                    </div>
+                    
+                    <div style="flex: 0.70;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT NUMBER</label>
+                        <input type="text" value="-" id="newcust-vat-no" class="form-control form-control-sm text-uppercase global-vat-no" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                    </div>
+                </div>
+
+                <!-- Second Row Fields -->
+                <div style="display: flex; gap: 4px; width: 100%;">
+
+                     <!-- PAYMENT TERM SELECTOR -->
+                     <div class="custom-combobox3 global-custom-combobox3" style="flex: 1.2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT TERMS</label>
+                        <input type="text" value="IMMEDIATE" placeholder="PAYMENT TERMS..." id="newcust-payment-terms" class="form-control form-control-sm text-uppercase global-payment-terms" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                            <ul id="newcust-terms-combo-list" class="dropdown-list global-terms-combo-list">
+                                <li data-value="IMMEDIATE">IMMEDIATE</li>
+                                <li data-value="100 %  ADVANCE">100 %  ADVANCE</li>
+                                <li data-value="50%  ADVANCE  50%  ON  DELIVERY">50%  ADVANCE  50%  ON  DELIVERY</li>
+                                <li data-value="CASH ON  DELIVERY">CASH ON  DELIVERY</li>
+                                <li data-value="30 DAYS PDC">30 DAYS PDC</li>
+                                <li data-value="60 DAYS PDC">60 DAYS PDC</li>
+                                <li data-value="90 DAYS PDC">90 DAYS PDC</li>
+                            </ul>
+                    </div>
+                   
+                    <div style="flex: 1;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CONTACT PERSON</label>
+                        <input type="text" value="N/A" id="newcust-contact-person" class="form-control form-control-sm text-uppercase global-contact-person" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                    </div>
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CONTACT NUMBER</label>
+                        <input type="text" value="N/A" id="newcust-contact-number" class="form-control form-control-sm global-contact-number" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                    </div>
+                    
+                     
+                </div>
+                
+              
+            
+<div class="newcust-mobile-email-row" style="display:flex;gap:4px;width:100%;"><div style="flex: 1;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">MOBILE NUMBER</label>
+                        <input type="text" value="N/A" id="newcust-mobile-number" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true">
+                    </div><div style="flex:3;min-width:0;"><label for="newcust-email" style="font-size:10px;font-weight:500;color:#000;margin-bottom:2px;display:block;">EMAIL ADDRESS</label><input type="email" id="newcust-email" placeholder="EMAIL ADDRESS" class="form-control form-control-sm" style="padding:0 0 0 2px;background:#fff;color:#000;border:1px solid #03a3ff;" autocomplete="off" data-lpignore="true" data-1p-ignore="true"></div></div>
+</form>
+        </div>
+    </div>
+</body>
+</html>

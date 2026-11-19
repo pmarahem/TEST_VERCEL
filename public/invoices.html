@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlFajar ERP | Historical Invoices Ledger</title>
+    <link rel="stylesheet" href="/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css" />
+    
+<link rel="stylesheet" href="/dashboard-refresh.css"><link rel="stylesheet" href="/invoices-refresh.css"><script src="/dashboard-refresh.js"></script>
+</head>
+<body class="invoices-page invoice-redesign">
+<!-- #region 📌 INVOICES HEADER AND FILTER BAR-->
+    <div class="sticky-top-container" style="padding: 2px; padding-top: 0px;">
+    <div class="invoice-toolbar d-flex justify-content-between align-items-center mb-1" style="padding: 3px; margin-top: 3px; background-color: #ffffff; gap: 15px;">            
+        
+        <!-- LEFT SIDE: Quotations Titles (width adjusted to auto/content-fit) -->
+        <div class="invoice-title-group d-flex align-items-center" style="background-color: #ffffff;">
+            <h3 class="fw-bold m-2" id="inv-head" style="font-size: 18px; color: #018afa; padding-left: 4px; padding-top:1px;">Invoices</h3>
+            <h3 class="fw-bold m-2" id="inv-head-mob" style="font-size: 15px; color: #018afa; padding-left: 4px; padding-top:1px;">Invoices</h3>
+                <button type="button" class="ledger-filter-toggle" aria-label="Hide filters" aria-controls="ledger-filters" aria-expanded="true" title="Hide filters"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 5-5 5 5"/></svg></button>
+            <div style="padding-top:3px;">
+                <h3 class="fw-bold" id="inv-head-date" style="font-size: 12px; color: #f201fa; padding-left: 4px; margin: 0;">date</h3>
+            </div>
+        </div>
+         
+        <!-- RIGHT SIDE: Search Filter Bar (width changed to flex-grow/auto) -->
+        <div id="ledger-filters" class="invoice-filters filter-card d-flex align-items-center" style="flex: 0.70; justify-content: flex-end; gap: 5px;">
+            <div style="flex: 0.7; min-width: 100px;">
+                <input type="text" id="search-customer" aria-label="Search customer or invoice number" class="form-control form-control-sm" style="text-transform: uppercase; background-color: #fff; color: #000000; border: 1px solid #018afa;" placeholder="Customer or Inv#">
+            </div>
+             <!-- INVOICE STATUS -->
+                    <div style="flex: 0.40;">
+                        <!-- <label style="font-size: 9px; font-weight: 400; color: #000000; margin-bottom: 2px; display: block;">Status</label> -->
+                        <select id="filter-status" aria-label="Invoice status" class="form-control form-control-sm " style="background-color: #fff; color: #000000; border: 1px solid #000000;">
+                            <option value="ALL">All</option>
+                            <option value="PAID">Paid</option>
+                            <option value="Adv.Paid">Adv.Paid</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="PDC">PDC All</option>
+                            <option value="PDC-DUE">PDC Due</option>
+                        </select>
+                    </div>
+            
+            <!-- DATE RANGE -->
+            <div style="flex: 0.55; min-width: 100px;">
+                <select id="filter-range" aria-label="Date range" class="form-control form-control-sm" style="background-color: #fff; color: #000000; border: 1px solid #018afa;">
+                    <option value="3MONTH" selected>Last 3 Months</option>
+                    <option value="CURRENT_MONTH">Current Month</option>
+                    <option value="LAST_MONTH">Last Month</option>
+                    <option value="2MONTH">Last 2 Months</option>
+                    <option value="6MONTH">Last 6 Months</option>
+                    <option value="CURRENT_YEAR">Current Year</option>
+                    <option value="FULL">All History</option>
+                </select>
+            </div>
+
+            <!-- From Picker -->
+            <div style="flex: 0.35">
+                <input type="date" id="filter-start-date" aria-label="From date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+        
+            <!-- To Picker -->
+            <div style="flex: 0.35">
+                <input type="date" id="filter-end-date" aria-label="To date" class="form-control form-control-sm" style="border: 1px solid #018afa;">
+            </div>
+
+            <!-- Action Buttons Box -->
+            <div class="invoice-filter-actions d-flex" style="gap: 5px;">
+                <button id="btn-reset" class="btn btn-sm btn-danger fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Reset</button>
+                <button id="btn-search" class="btn btn-sm btn-primary fw-bold shadow-sm" style="color: #fff; white-space: nowrap;">Search</button>
+            </div>
+            <!-- ROUND AVATAR CONTAINER -->
+            
+        </div>
+    </div>
+    </div>
+
+    <div id="loading-overlay">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Please wait... Accessing data records from Cloud...
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 INVOICES TABLE-->
+    <div class="table-card" id="table-display-block">
+        <div class="table-responsive" style="max-height: calc(100vh - 88px); overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover table-dense m-0" style="table-layout: auto;">
+                <thead>
+                    <tr>
+                        <th class="col-width-id">ID</th>
+                        <th>Inv#</th>
+                        <th>Inv. Date</th>
+                        <th>LPO No</th>
+                        <th>Customer Name</th>
+                        <th>Amount</th>
+                        <th>Paid</th>
+                        <th>CN Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>CN. No</th>
+                        <th>CN. Date</th>
+                        <th>CN. Amt</th>
+                        <th>Pay Mode</th>
+                        <th>Pay Date</th>
+                        <th>Chq. No</th>
+                        
+                    </tr>
+                </thead>
+                <tbody id="invoice-rows" style="font-size: 10px; font-weight: 500; color: rgb(15, 4, 165);">
+                    <tr><td colspan="13" class="text-center text-muted py-3">Click Query to load accounting matrix records...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 INVOICES RIGHT-CLICK CONTEXT MENU-->
+    <div id="invoices-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 1050; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <div class="invoices-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit Invoice</div>
+        <div class="invoices-context-item" data-action="PDC-DUE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">PDC Clear</div>
+        <div class="invoices-context-item" data-action="DO" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Create DO</div>
+        <div class="invoices-context-item" data-action="PRINT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Print Invoice</div>
+        <div class="invoices-context-item" data-action="MULTI-PAY" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Multi Pay-Single Client</div>   
+        <div class="invoices-context-item" data-action="PAY" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Single Payment</div>
+        <div class="invoices-context-item" data-action="RECEIPT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Chq-Cash Receipts</div>
+        <div class="invoices-context-item" data-action="MULTI-RECEIPT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Multi Chq-Cash Receipts</div>
+        <div class="invoices-context-item" data-action="STATEMENT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Statements</div>
+        <div class="invoices-context-item" data-action="DELETE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Delete</div>    
+    </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .invoices-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .invoices-row-highlight-context {background-color: #d1ecf1 !important; /* Fast layout color */ }
+    </style>
+<!-- #endregion -->    
+
+<!-- #region 📌 CREDIT NOTE MODAL ENGINE -->
+<div class="global-modal"  id="credit-note-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99999; align-items: center; justify-content: center; display: none;">
+     <div style="background: #ffffff; padding: 0; width: 95%; max-width: 95vw; height: 85%; max-height: 85vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- CREDIT Modal Header Layout -->
+            <div id="credit-modal-head" style="background: #020ebd; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="credit-modal-title">Credit Note</h4>
+                    <span id="credit-countdown-seconds" style="color: #ffffff; display: none;">30</span>
+
+                <div style="display: flex; justify-content: flex-end; gap: 18px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">
+                <button type="button" id="btn-save-credit-note" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" style="color: white;">Save CN</button>
+                <button type="button" onclick="closeAppModal();" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button>
+                    
+                </div>
+            </div>
+           
+            <!--CREDIT Master Metadata Entry Form fields -->
+            <form class="global-master-form"  id="credit-note-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!--CREDIT First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div style="flex: 3.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER NAME</label>
+                        <input type="text" id="credit-customer" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled required>
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none" id="autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+                    </div>
+
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">POSTBOX</label>
+                        <input type="text" id="credit-postbox" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <!-- EMIRATE SELECTOR -->
+                    <div style="flex: 0.67">
+                    <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATES</label>
+                    <select id="credit-emirate" class="form-control form-control-sm " style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                        <option value="ABU DHABI">ABU DHABI</option>
+                        <option value="AJMAN">AJMAN</option>
+                        <option value="DUBAI">DUBAI</option>
+                        <option value="FUJAIRAH">FUJAIRAH</option>
+                        <option value="RAK">RAK</option>
+                        <option value="SHARJAH">SHARJAH</option>
+                        <option value="UAQ">UAQ</option>
+                    </select>
+                    </div>
+
+                    <div style="flex: 1.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ADDRESS</label>
+                        <input type="text" id="credit-address" class="form-control form-control-sm" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+                    
+                    <div style="flex: 0.70;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT NUMBER</label>
+                        <input type="text" id="credit-vat-no" class="form-control form-control-sm" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+                                        
+                    
+<!-- 
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">C N NUMBER</label>
+                        <input type="text" id="credit-invoice-number" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #f80303" required readonly>
+                    </div>                     -->
+            </div>
+
+                <!--CREDIT Second Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                <div style="flex: 0.65;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">C N DATE</label>
+                        <input type="date" id="credit-date" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; border: 1px solid red;" required>
+                    </div>
+
+                <div style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">LPO NUMBER</label>
+                        <input type="text" id="credit-lpo" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                 <div style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CO NUMBER</label>
+                        <input type="text" id="credit-co-no" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+                    
+                <div style="flex: 0.75;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INVOICE NO</label>
+                        <input type="text" id="credit-invoice-no" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.65;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INVOICE DATE</label>
+                        <input type="date" id="credit-invoice-date" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; border: 1px solid #03a3ff;"required>
+                    </div>
+                    <div style="flex: 3.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">NOTES</label>
+                        <input type="text" id="credit-notes" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid red;" >
+                    </div>
+                    
+
+                                 
+            </div>
+
+                <!-- CREDIT THIRD Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                   <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SUB TOTAL</label>
+                        <input type="text" value="0.00" id="credit-taxable-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT TOTAL</label>
+                        <input type="text" value="0.00" id="credit-total-vat" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">GRAND TOTAL</label>
+                        <input type="text" value="0.00" id="credit-grand-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAID</label>
+                        <input type="text" value="0.00" id="credit-paid-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">BALANCE</label>
+                        <input type="text" value="0.00" id="credit-balance-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.67">
+                    <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">STATUS</label>
+                    <select id="credit-status" value="CREDIT" class="form-control form-control-sm " style=" padding: 0 0 0 2px; color: #000000; border: 1px solid #03a3ff;" disabled>
+                        <option value="CREDIT">CREDIT</option>
+                        <option value="PAID">PAID</option>
+                        
+                    </select>
+                    </div>
+
+                    <div style="flex: 0.67">
+                    <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT TYPE</label>
+                    <select id="credit-payment-type" value="" class="form-control form-control-sm " style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                        <option value="">SELECT</option>
+                        <option value="CASH">CASH</option>
+                        <option value="BANK TRANSFER">BANK TRANSFER</option>
+                        <option value="CHEQUE">CHEQUE</option>
+                        <option value="BANK CARD">BANK CARD</option>
+                    </select>
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT DATE</label>
+                        <input type="date" value="" id="credit-deldate" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black;color-scheme: dark;  border: 1px solid #03a3ff;" disabled>
+                    </div> 
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CHQ. NO.</label>
+                        <input type="text" value="-" id="credit-unit-price" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAID INV. NO.</label>
+                        <input type="text" value="" id="credit-discount" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+
+                                   
+            </div>
+       
+                <!--CREDIT FOURTH Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+                    <div style="flex: 5.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMOUNT IN WORDS</label>
+                        <input type="text" placeholder="AMOUNT IN WORDS DISPLAY HERE........" id="credit-amount-in-words" class="form-control form-control-sm" style="text-align: center; padding: 0 0 0 2px;font-size: 11px; font-weight: 500;  background-color: #949393; color: #000000; border: 1px solid #03a3ff;" disabled>
+                    </div>
+                     <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">C N NUMBER</label>
+                        <input type="text" placeholder="AUTO CREATE" id="credit-number" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #03a3ff" disabled>
+                    </div> 
+            </div>
+                
+
+                <!-- 📊 CREDIT BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="credit-parent" style="max-height: 280px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="credit-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    <th style="width: 5%; display: none;">ID</th>
+                                    <th style="width: 3%;">SrNo</th>
+                                    <th style="width: 23%;">Item Description</th>
+                                    <th style="width: 4%;" class="text-center">Qty</th>
+                                    <th style="width: 5%;" class="text-center">CN Qty</th>
+                                    <!-- <th style="width: 6%;" class="text-end">Size(mm)</th>
+                                    <th style="width: 5%;" class="text-end">RAL</th>
+                                    <th style="width: 5%;" class="text-end">Unit</th> -->
+                                    <th style="width: 6%;" class="text-end">Unit Price</th>
+                                    <th style="width: 6%;" class="text-end">Disc%</th>
+                                    <th style="width: 6%;" class="text-end">VAT%</th>
+                                    <th style="width: 6%;" class="text-end">Taxable</th>
+                                    <th style="width: 6%;" class="text-end">VAT Total</th>
+                                    <th style="width: 6%;" class="text-end">Unit Total</th>
+                                    <th style="width: 4%;" class="text-end">PID</th>
+                                    <th style="width: 4%;" class="text-end">Stock</th>
+                                    <th style="width: 5%;" class="text-end">ICost</th>
+                                    <th style="width: 6%;" class="text-end">UCost</th>
+                                    <th style="width: 6%;" class="text-end">SValue</th>
+                                    <!-- <th style="width: 6%;" class="text-end">UMargin</th>
+                                    <th style="width: 6%;" class="text-end">Status</th>
+                                    <th style="width: 5%;" class="text-end">Inv. No</th> -->
+                                    
+                                </tr>
+                            </thead>
+                            <tbody id="credit-note-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->    
+
+<!-- #region 📌 ITEM EDIT MODAL (EDIT INVOICES)-->
+    <div id="invitems-modal-overlay" style="margin: 0; display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; width: 75%; height: 41%;   border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">
+            
+            <!-- Modal Header -->
+            <div style="background: #630181; padding: 5px 10px; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: 700;" id="invitems-title-text">EDIT INVOICE ITEM RAW</h4>
+                <button type="button" class="btn-cancel" style="background: none; border: none; color: #a2a3b7; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            
+            <!-- Modal Form Body -->
+            <form id="invitems-transaction-form" style="padding: 6px; display: flex; flex-direction: column; gap: 15px;">
+                <div class="item-editor-fields">
+                <div style="display: flex; gap: 5px;">
+
+                    <div style="flex: 0.3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PID</label>
+                        <input type="text" value="" id="invitems-pid" class="form-control form-control-sm" style="text-align: center; padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #03a3ff;" readonly>
+                    </div>
+                    <div style="flex: 0.3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">Sr#</label>
+                        <input type="text" value="" id="invitems-sr-number" class="form-control form-control-sm" style="text-align: center; padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #03a3ff;" readonly>
+                    </div>
+                    
+                    <!-- product-autocomplete-results -->
+                    <div class="position-relative" style="flex: 3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PRODUCTS</label>
+                        <input type="text"  id="invitems-product" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #03a3ff;" readonly>
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none" id="invitems-product-autocomplete-results" style="left:0; top: 100%;  z-index: 1090; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+                    </div>
+                    <div style="flex: 0.35;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">QTY</label>
+                        <input type="number" value="1" min="1" id="invitems-qty" class="form-control form-control-sm" style="text-align: center; padding: 0 0 0 2px; background-color: #fff; color: blue; border: 1px solid #03a3ff;" required>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SIZE(mm)</label>
+                        <input type="text" value="-" id="invitems-i-size" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: blue; border: 1px solid #03a3ff;">
+                    </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">RAL</label>
+                        <input type="text" value="-" id="invitems-i-ral" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:blue;color-scheme: dark;  border: 1px solid #03a3ff;">
+                    </div>
+                    <div style="flex: 0.4;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UNIT</label>
+                        <input type="text" value="-" id="invitems-i-unit" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: blue; border: 1px solid #03a3ff;">
+                    </div>
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UNIT PRICE</label>
+                        <input type="number" value="0.00" step="0.5" id="invitems-unit-price" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: blue; border: 1px solid #03a3ff;" required>
+                    </div>
+                    <div style="flex: 0.3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DIS %</label>
+                        <input type="number" value="0.00" min="0.00"  max="100" step="1" id="invitems-disc-per" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: blue; border: 1px solid #03a3ff;" required>
+                    </div>
+                    <div style="flex: 0.3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT %</label>
+                        <input type="number" value="5.00" min="5.00" max="100" step="0.1" id="invitems-vat-per" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: blue; border: 1px solid #03a3ff;" required>
+                    </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">TAXABLE</label>
+                        <input type="number" value="0.00" id="invitems-taxable" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT TOTAL</label>
+                        <input type="number" value="0.00" id="invitems-vat-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UNIT TOTAL</label>
+                        <input type="number" value="0.00" id="invitems-unit-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DISC-AMT</label>
+                        <input type="number" value="0.00" id="invitems-disc-amt" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.40;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ICOST</label>
+                        <input type="number" value="0.00" id="invitems-i-cost" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                    
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UCOST</label>
+                        <input type="number" value="0.00"id="invitems-u-cost" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color:black;color-scheme: dark;  border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UMARGIN</label>
+                        <input type="number" value="0.00" id="invitems-u-margin" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SVALUE</label>
+                        <input type="number" value="0.00" min="0.00" id="invitems-s-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly>
+                    </div>
+                    
+                    <div style="flex: 0.50;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">O Stock</label>
+                        <input type="number" value="0" id="invitems-o-stock" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;"readonly >
+                    </div>
+                    <div style="flex: 0.50;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">A Stock</label>
+                        <input type="number" value="0" min="0" id="invitems-a-stock" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: black; border: 1px solid #f80303;" readonly >
+                    </div>
+                </div>
+
+                
+
+                </div>
+                <!-- Footer Save Buttons -->
+                <div class="item-editor-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding-top: 5px; border-top: 1px solid #dee2e6;">
+                    <button type="button" class="btn btn-sm btn-danger border px-3 fw-semibold  btn-cancel ">Cancel</button>
+                    <button type="button" id="invitems-update-button" class="btn btn-sm btn-success px-4 fw-bold shadow-sm">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 SINGLE PAYMENT MODAL-->
+    <div class="global-modal"  id="payment-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; width: 500px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">
+            
+            <!-- Modal Header -->
+            <div style="background: #1e1e2d; padding: 5px 5px; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="color: #ffffff; margin: 0; font-size: 12px; font-weight: 600; text-align: center;" id="modal-title-text">Receive Payment</h4>
+                <!-- <button type="button" class="btn-cancel" style="background: none; border: none; color: #a2a3b7; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button> -->
+            </div>
+            
+            <!-- Modal Form Body -->
+            <form class="global-master-form"  id="payment-transaction-form" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div class="payment-fields">
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">GRAND TOTAL</label>
+                        <input type="text" style="font-weight: 700;" id="modal-grand-total" class="form-control form-control-sm bg-light fw-bold" readonly>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; font-weight: 700; color: #b91c1c; display: block; margin-bottom: 4px;">CURRENT BALANCE</label>
+                        <input type="text" style="font-weight: 700;" id="modal-current-balance" class="form-control form-control-sm bg-light text-danger fw-bold" readonly>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: 700; color: #027431; display: block; margin-bottom: 4px;">AMOUNT PAID (AED)</label>
+                    <input type="number" style="color: #027431; font-weight: 700;" id="modal-amount-paid" class="form-control form-control-sm" step="0.01" min="0" readonly>
+                </div>
+
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">BALANCE AMOUNT TO PAY (AED)</label>
+                    <input type="number" style="font-weight: 700;" id="modal-amount-to-pay" class="form-control form-control-sm"  min="0" required placeholder="0.00">
+                </div>
+
+                </div>
+
+                <!-- <div style="flex: 1;">
+                    <label style="font-size: 11px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">AMOUNT RECEIVED (AED)</label>
+                    <input type="number" id="modal-amount-input" class="form-control form-control-sm" step="0.01" min="0" required placeholder="0.00" style="font-size: 14px; font-weight: bold; height: 34px;">
+                </div> -->
+
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">PAYMENT MODE</label>
+                        <select id="modal-mode-select" class="form-select form-select-sm">
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="PDC">PDC</option>
+                        </select>
+                    </div>
+                     <!-- onchange="toggleChequeInput(this.value)" -->
+                    <div style="flex: 1;">
+                        <label style="font-size: 11px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">RECEIVED DATE</label>
+                        <input type="date" id="modal-date-input" class="form-control form-control-sm" required>
+                    </div>
+                </div>
+
+                <!-- Hidden by default, slides down if Cheque mode selected -->
+                <div id="modal-cheque-row" style="display: none;">
+                    <label style="font-size: 11px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">CHEQUE / TRANSACTION NUMBER</label>
+                    <input type="text" id="modal-chq-no" class="form-control form-control-sm" placeholder="Enter Reference No...">
+                </div>
+
+                </div>
+                <!-- Footer Save Buttons -->
+                <div class="payment-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <button type="button" onclick="closeAppModal();"  class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel"  style="color:white;">Cancel</button>
+                    <!-- <button type="button" class="btn btn-sm btn-danger border px-3 fw-semibold  btn-cancel ">Cancel</button> -->
+                    <button type="button" id="payment-btn-update" class="btn btn-sm btn-success px-4 fw-bold shadow-sm"  >Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 MULTI PAYMENT MODAL ENGINE -->
+ <div class="global-modal" id="multipayment-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99998; align-items: center; justify-content: center; display: none;">
+
+     <div style="background: #ffffff; padding: 0; width: 70%; max-width: 70vw; height: 80%; max-height: 80vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- Modal Header Layout -->
+            <div id="multipayment-modal-head" style="background: #8501ad; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">                 
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="multipayment-modal-title">MULTI PAYMENT SINGLE CLIENT</h4>                                 
+                    <div style="display: flex; justify-content: flex-end; gap: 30px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">   
+                        <!-- <span id="multipayment-countdown-seconds" style="color: #ffffff; display: none;">30</span>                  -->
+                        <button type="button" id="btn-update-multipayment" class="btn btn-sm btn-success px-4 fw-bold shadow-sm disabled" style="color: white;">Update Payment</button> 
+                        <button type="button"  onclick="closeAppModal();" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button>
+                                               
+                    </div>                
+            </div>
+            
+            <!-- Master Metadata Entry Form fields -->
+            <form class="global-master-form"  id="multipayment-invoice-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!-- First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div style="flex: 3;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER</label>
+                        <input type="text" id="multipayment-customer" class="form-control form-control-sm" style="color: red; padding: 0 0 0 2px; font-size: 11px; font-weight: 600; border: 1px solid #f80303;" readonly>
+                        <!-- <ul class="list-group position-absolute w-100 start-0 shadow d-none" id="multipayment-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul> -->
+                    </div>
+                    <!-- EMIRATE SELECTOR -->
+                        <div style="flex: 0.67">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATES</label>
+                        <input type="text"  id="multipayment-emirate" class="form-control form-control-sm " style="color: red; padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600;border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    
+
+            </div>
+
+            
+                <!-- SECOND Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV COUNT</label>
+                        <input type="text" value="0" id="multipayment-inv-count" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV TO PAY</label>
+                        <input type="text" value="0" id="multipayment-count" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">GRANT TOTAL</label>
+                        <input type="text" value="0.00" id="multipayment-grandtotal" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CN AMOUNT</label>
+                        <input type="text" value="0.00" id="multipayment-cnamount" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMT TO PAY</label>
+                        <input type="text" value="0.00" id="multipayment-grand-total" class="form-control form-control-sm" style="color: red; padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600; color: red; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000;  margin-bottom: 2px; display: block;">PAYMENT MODE</label>
+                        <select id="multipayment-mode-select" style="color: blue; border: 1px solid #0386d1;" class="form-control form-control-sm form-select form-select-sm">
+                            <option value="Cash">CASH</option>
+                            <option value="Bank Transfer">BANK TRANSFER</option>
+                            <option value="Bank Deposit">BANK DEPOSIT</option>
+                            <option value="Bank Card">CARD PAYMENT</option>
+                            <option value="Cheque">CHEQUE</option>
+                            <option value="PDC">PDC</option>
+                        </select>
+                    </div>
+                    <div style="flex: 0.6;">
+                    <label style="font-size: 9px; font-weight: 500; color: #000000; display: block; margin-bottom: 2px;"> CHEQUE/REF. NO</label>
+                    <input type="text" style="border: 1px solid #0386d1; color: #000000; font-weight: 700;" id="multipayment-chq-no" class="form-control form-control-sm" disabled>
+                    </div>
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #495057; display: block; margin-bottom: 2px;">CHEQUE DATE</label>
+                        <input type="date" style=" border: 1px solid #0386d1;" id="multipayment-date-input" class="form-control form-control-sm" disabled>
+                    </div>
+                  
+                    
+            </div>
+
+            <!-- THIRD Row Fields -->
+            <div style="display: flex; gap: 5px;">
+                <div style="flex: 1;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; display: block; margin-bottom: 2px;">BANK NAME</label>
+                        <input type="text" value="Abu Dhabi Commercial Bank " style="font-weight: 500; text-transform: uppercase;" id="multipayment-bank" class="form-control form-control-sm" disabled >
+                </div>
+                
+                </div>
+
+                <!-- FORTH Row Fields -->
+            <div style="display: flex; gap: 3px; width: 100%;">
+                      <div style="flex: 0.18; margin-top: 10px; margin-right: 0;">
+                        <!-- <label style="font-size: 10px; font-weight: 500; color: #000000; padding-bottom: 0; margin-bottom: 0; display: block;">SALE</label> -->
+                        <button type="button" id="btn-selectall" style="color: #ffffff;" class="btn btn-sm btn-primary fw-bold shadow-sm">Select All</button>
+                      </div>
+
+                    <div style="flex: 2;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMOUNT IN WORDS</label>
+                        <input type="text" placeholder="PLEASE SELECT INVOICES FROM BELOW TABLE TO PAY AND  DISPLAY AMOUNT IN WORDS HERE........" id="multipayment-amount-in-words" class="form-control form-control-sm" style="text-transform: uppercase; color: red; font-size: 11px; text-align: left; font-weight: 600; border: 1px solid #f80303;" readonly>
+                    </div>
+                     <div style="display: none;" id="multipayment-cheque-row">
+                    <label style="font-size: 9px; font-weight: 500; color: #495057; display: block; margin-bottom: 2px;">CHEQUE / TRANSACTION NUMBER</label>
+                    <input type="text" style=" border: 1px solid #0386d1;" id="multipayment-chq-no" class="form-control form-control-sm" placeholder="Enter Chq. No or Reference No...">
+                </div>
+            </div>  
+
+                <!-- 📊 BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="multipayment-parent" style="max-height: 330px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="multipayment-invoice-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="table-layout: auto; background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Invoice No</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Invoice Date</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Inv Amount</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Amount</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Balance</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Date</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Number</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Status</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Paid Amt</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Pay Mode</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">LPO Number</th>
+
+                                </tr>
+                            </thead>
+                            <tbody class="global-modal-items-rows"  id="multipayment-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->    
+
+<!-- #region 📌 CASH AND CHEQUE RECEIPT MODAL-->
+    <div class="global-modal"  id="receipt-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; width: 65%; max-width: 65vw; border-radius: 6px; box-shadow: 0 10px 10px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">
+            
+            <!-- Modal Header -->
+            <div style="background: #9302cc; padding: 5px 5px; display: flex; justify-content: space-between; align-items: center;">
+                <h4  id="receipt-title-text" style="color: #ffffff; margin: 0; font-size: 12px; font-weight: 600; text-align: center;">CASH/CHEQUE RECEIPT</h4>
+                <!-- <button type="button" class="btn-cancel" style="background: none; border: none; color: #a2a3b7; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button> -->
+            </div>
+            
+            <!-- Modal Form Body -->
+            <form class="global-master-form"  id="receipt-transaction-form" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div class="receipt-fields">
+                <div style="display: flex; gap: 5px;">
+                <div style="flex: 2.8;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">CUSTOMER NAME</label>
+                        <input type="text" style="font-weight: 700;" id="receipt-customer" class="form-control form-control-sm" readonly>
+                </div>
+                <div style="flex: 0.45;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> EMIRATE</label>
+                    <input type="text" style="color: #000000; font-weight: 700;" id="receipt-emirate" class="form-control form-control-sm" readonly>
+                </div>
+                 <div style="flex: 0.53;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">RECEIPT DATE</label>
+                        <input type="date" style="color: #000000; font-weight: 700;" id="receipt-date" class="form-control form-control-sm" required>
+                </div>
+                    
+                </div>
+                <div style="display: flex; gap: 5px;">
+                <div style="flex: 0.5;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> INVOICE NUMBER</label>
+                    <input type="text" style="color: #000000; font-weight: 700;" id="receipt-invno" class="form-control form-control-sm" readonly>
+                </div>
+                <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">INVOICE DATE</label>
+                        <input type="date" style="color: #000000; font-weight: 700;" id="receipt-invdate" class="form-control form-control-sm" readonly>
+                </div>
+                <div style="flex: 0.5;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> INVOICE AMOUNT</label>
+                    <input type="text" style="color: #000000; font-weight: 700;" id="receipt-amount" class="form-control form-control-sm" readonly>
+                </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #02b15f; display: block; margin-bottom: 4px;">RECEIPT TYPE</label>
+                        <select id="receipt-type-select" style="color: #000000; font-weight: 700;" class="form-control form-control-sm form-select form-select-sm">
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Bank Deposit">Bank Deposit</option>
+                            <option value="Bank Card">Bank Card</option>
+                            <option value="Cheque Blank">Cheque Blank</option>
+                            <option value="Cash Blank">Cash Blank</option>
+                        </select>
+                    </div>
+                <div style="flex: 0.5;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> CHEQUE NO</label>
+                    <input type="text" style="color: #000000; font-weight: 700;" id="receipt-chqno" class="form-control form-control-sm" disabled>
+                </div>
+                <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">CHEQUE DATE</label>
+                        <input type="date" style="color: #000000; font-weight: 700;" id="receipt-chqdate" class="form-control form-control-sm" disabled>
+                </div>
+                </div>
+
+                <div style="display: flex; gap: 5px;">
+                <div style="flex: 1;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">BANK NAME</label>
+                        <input type="text" value="Abu Dhabi Commercial Bank " style="font-weight: 700; text-transform: uppercase;" id="receipt-bank" class="form-control form-control-sm" disabled >
+                </div>
+                
+                </div>
+                 <div style="display: flex; gap: 5px;">
+                
+                <div style="flex: 3;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> AMOUNT IN WORDS</label>
+                    <input type="text" style="color: #000000; font-weight: 700; text-transform: uppercase;" id="receipt-inwords" class="form-control form-control-sm" readonly>
+                </div>
+                <div style="flex: 0.2;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> ID</label>
+                    <input type="text" style="color: #000000; font-weight: 700; text-transform: uppercase;" id="receipt-id" class="form-control form-control-sm" readonly>
+                </div>
+                 
+                    
+                </div>
+
+                <!-- Hidden by default, slides down if Cheque mode selected -->
+                <!-- <div id="receipt-cheque-row" style="display: none;">
+                    <label style="font-size: 9px; font-weight: 700; color: #495057; display: block; margin-bottom: 4px;">CHEQUE / TRANSACTION NUMBER</label>
+                    <input type="text" id="receipt-chq-no" class="form-control form-control-sm" placeholder="Enter Reference No...">
+                </div> -->
+
+                </div>
+                <!-- Footer Save Buttons -->
+                <div class="receipt-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <button type="button" onclick="closeAppModal();"  class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel"  style="color:white; font-size: 10px; font-weight: 600;">Cancel</button>
+                    <!-- <button type="button" class="btn btn-sm btn-danger border px-3 fw-semibold  btn-cancel ">Cancel</button> -->
+                    <button type="button" id="receipt-btn-update" style="color:white; font-size: 10px; font-weight: 600;" class="btn btn-sm btn-success px-4 fw-bold shadow-sm"  >Print Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 MULTI CASH AND CHEQUE RECEIPT MODAL -->
+ <div class="global-modal" id="multireceipt-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99998; align-items: center; justify-content: center; display: none;">
+
+     <div style="background: #ffffff; padding: 0; width: 70%; max-width: 70vw; height: 80%; max-height: 80vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- Modal Header Layout -->
+            <div id="multireceipt-modal-head" style="background: #8501ad; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">                 
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="multireceipt-modal-title">MULTI INVOICE RECEIPT </h4>                                 
+                    <div style="display: flex; justify-content: flex-end; gap: 30px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">   
+                        <!-- <span id="multireceipt-countdown-seconds" style="color: #ffffff; display: none;">30</span>                  -->
+                        <button type="button" id="btn-update-multireceipt" class="btn btn-sm btn-success px-4 fw-bold shadow-sm disabled" style="color: white;">Create Receipt</button> 
+                        <button type="button"  onclick="closeAppModal();" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button>
+                                               
+                    </div>                
+            </div>
+            
+            <!-- Master Metadata Entry Form fields -->
+            <form class="global-master-form"  id="multireceipt-invoice-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!-- First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div style="flex: 3;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER NAME</label>
+                        <input type="text" id="multireceipt-customer" class="form-control form-control-sm" style="color: red; padding: 0 0 0 2px; font-size: 11px; font-weight: 600; border: 1px solid #f80303;" readonly>
+                        <!-- <ul class="list-group position-absolute w-100 start-0 shadow d-none" id="multireceipt-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul> -->
+                    </div>
+                    <!-- EMIRATE SELECTOR -->
+                    <div style="flex: 0.55">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATES</label>
+                        <input type="text"  id="multireceipt-emirate" class="form-control form-control-sm " style="color: red; padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600;border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.4;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV COUNT</label>
+                        <input type="text" value="0" id="multireceipt-inv-count" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+
+                    
+
+            </div>
+
+            
+                <!-- SECOND Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+                    
+                    
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">GRANT TOTAL</label>
+                        <input type="text" value="0.00" id="multireceipt-grandtotal" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CN AMOUNT</label>
+                        <input type="text" value="0.00" id="multireceipt-cnamount" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">RECEIPT AMT</label>
+                        <input type="text" value="0.00" id="multireceipt-grand-total" class="form-control form-control-sm" style="color: red; padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600; color: red; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #02b15f; display: block; margin-bottom: 2px;">RECEIPT DATE</label>
+                        <input type="date" style=" border: 1px solid #0386d1;" id="multireceipt-date-input" class="form-control form-control-sm">
+                    </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #02b15f; display: block; margin-bottom: 2px;">RECEIPT TYPE</label>
+                        <select id="multireceipt-mode-select" style="color: #000000; font-weight: 500; border: 1px solid #0386d1;" class="form-control form-control-sm form-select form-select-sm">
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Bank Deposit">Bank Deposit</option>
+                            <option value="Bank Card">Bank Card</option>
+                            <option value="Cheque Blank">Cheque Blank</option>
+                            <option value="Cash Blank">Cash Blank</option>
+                        </select>
+                    </div>
+                    <div style="flex: 0.5;">
+                    <label style="font-size: 9px; font-weight: 500; color: #02b15f; display: block; margin-bottom: 2px;"> CHEQUE NO</label>
+                    <input type="text" style="color: #000000; font-weight: 700; border: 1px solid #0386d1;" id="multireceipt-chqno" class="form-control form-control-sm" disabled>
+                </div>
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #02b15f; display: block; margin-bottom: 2px;">CHEQUE DATE</label>
+                        <input type="date" style=" border: 1px solid #0386d1;" id="multireceipt-chq-date" class="form-control form-control-sm" disabled>
+                    </div>
+                    <!-- Hidden by default, slides down if Cheque mode selected -->
+                
+                    
+            </div>
+
+            <!-- THIRD Row Fields -->
+              <div style="display: flex; gap: 5px;">
+                <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV SELECTED</label>
+                        <input type="text" value="0" id="multireceipt-count" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                <div style="flex: 3;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; display: block; margin-bottom: 4px;">BANK NAME</label>
+                        <input type="text" value="Abu Dhabi Commercial Bank " style="font-weight: 500; text-transform: uppercase;" id="multireceipt-bank" class="form-control form-control-sm" disabled >
+                </div>
+                
+                </div>
+
+                <!-- FORTH Row Fields -->
+            <div style="display: flex; gap: 3px; width: 100%;">
+                      <div style="flex: 0.18; margin-top: 10px; margin-right: 0;">
+                        <!-- <label style="font-size: 10px; font-weight: 500; color: #000000; padding-bottom: 0; margin-bottom: 0; display: block;">SALE</label> -->
+                        <button type="button" id="multireceipt-btn-selectall" style="color: #ffffff;" class="btn btn-sm btn-primary fw-bold shadow-sm">Select All</button>
+                      </div>
+
+                    <div style="flex: 2;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMOUNT IN WORDS</label>
+                        <input type="text" placeholder="PLEASE SELECT INVOICES FROM BELOW TABLE TO PAY AND  DISPLAY AMOUNT IN WORDS HERE........" id="multireceipt-amount-in-words" class="form-control form-control-sm" style="text-transform: uppercase; color: red; font-size: 11px; text-align: left; font-weight: 600; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 0.25; text-align: center; align-items: end;">
+                        <label style="font-size: 9px; font-weight: 500; color: red; margin-bottom: 2px; display: block;">PENDING</label>
+                        <input type="checkbox" id="multireceipt-pending" class="form-control form-control-sm">
+                    </div>
+                    
+            </div>  
+
+                <!-- 📊 BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="multireceipt-parent" style="max-height: 250px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="multireceipt-invoice-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="table-layout: auto; background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Invoice No</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Invoice Date</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Inv Amount</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Amount</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Balance</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Date</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Number</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Status</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Paid Amt</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">CN Pay Mode</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">LPO Number</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Inv Status</th>
+
+                                </tr>
+                            </thead>
+                            <tbody class="global-modal-items-rows"  id="multireceipt-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<!-- #endregion --> 
+
+<!-- #region 📌 EDIT INVOICE MODAL ENGINE -->
+<div class="global-modal" id="editinv-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99998; align-items: center; justify-content: center; display: none;">
+     <div style="background: #ffffff; padding: 0; width: 99%; max-width: 99vw; height: 98%; max-height: 95vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- Modal Header Layout -->
+            <div id="modal-head" style="background: #630181; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">                 
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="edit-modal-title">Edit Invoice Blueprint</h4>                                 
+                    <div style="display: flex; justify-content: flex-end; gap: 30px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">   
+                        <span  class="countdown-seconds" id="countdown-seconds" style="color: #ffffff; display: none;">30</span>                 
+                        <button type="button" id="btn-update-invoice" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" style="color: white;">Update</button> 
+                        <!-- <button type="button" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button> -->
+                        <button type="button" onclick="forceResetModalLock('editinv-modal-overlay'); closeAppModal(); setActiveSidebarItem('/invoices');"  class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel"  style="color:white;">Cancel</button>
+                      
+                    </div>                
+            </div>
+            
+            <!-- Master Metadata Entry Form fields -->
+            <form class="global-master-form" id="edit-invoice-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!-- First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div class="position-relative" style="flex: 3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER NAME</label>
+                        <input type="text" placeholder="ENTER CUSTOMER NAME....." id="customer" class="form-control form-control-sm text-uppercase global-customer" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none global-autocomplete-results" id="edit-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+                    </div>
+
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">POSTBOX</label>
+                        <input type="text" id="edit-postbox" class="form-control form-control-sm text-uppercase global-postbox" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <!-- Emirate Selector -->
+                    <div class="custom-combobox1 global-custom-combobox1" style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATE</label>
+                        <input type="text" value="ABU DHABI" placeholder="ENTER EMIRATE......" id="edit-emirate" class="form-control form-control-sm text-uppercase global-emirate" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                            <ul id="emirate-combo-list" class="dropdown-list global-emirate-combo-list">
+                                <li data-value="ABU DHABI">ABU DHABI</li>
+                                <li data-value="AJMAN">AJMAN</li>
+                                <li data-value="DUBAI">DUBAI</li>
+                                <li data-value="FUJAIRAH">FUJAIRAH</li>
+                                <li data-value="RAK">RAK</li>
+                                <li data-value="SHARJAH">SHARJAH</li>
+                                <li data-value="UAQ">UAQ</li>
+                            </ul>
+                    </div>
+
+                    <!-- address Selector -->
+                    <div class="custom-combobox2  global-custom-combobox2" style="flex: 2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ADDRESS</label>
+                        <input type="text" value="MUSSAFAH 32, ABU DHABI" placeholder="ENTER ADDRESS......" id="edit-address" class="form-control form-control-sm text-uppercase global-address" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                            <ul id="address-combo-list" class="dropdown-list global-address-combo-list">
+                                <li data-value="MOHAMMED BIN ZAYED CITY, ABU DHABI">MOHAMMED BIN ZAYED CITY, ABU DHABI</li>
+                                <li data-value="MUSSAFAH, ABU DHABI">MUSSAFAH 32, ABU DHABI</li>
+                                <li data-value="BANIYAS, ABU DHABI">BANIYAS, ABU DHABI</li>
+                                <li data-value="AL SHAMKHA, ABU DHABI">AL SHAMKHA, ABU DHABI</li>
+                                <li data-value="AL SHAHAMA, ABU DHABI">AL SHAHAMA, ABU DHABI</li>
+                                <li data-value="CITY, ABU DHABI">CITY, ABU DHABI</li>
+                                
+                                <li data-value="AJMAN">AJMAN</li>
+                                <li data-value="DEIRA, DUBAI">DEIRA, DUBAI</li>
+                                <li data-value="BURDUBAI, DUBAI">BURDUBAI, DUBAI</li>
+                                <li data-value="JABEL ALI, DUBAI">JABEL ALI, DUBAI</li>
+                                <li data-value="DIP, DUBAI">DIP, DUBAI</li>
+                                <li data-value="DIC, DUBAI">DIC, DUBAI</li>
+                                <li data-value="FUJAIRAH">FUJAIRAH</li>
+                                <li data-value="RAK">RAK</li>
+                                <li data-value="SHARJAH">SHARJAH</li>
+                                <li data-value="UAQ">UAQ</li>
+                            </ul>
+                    </div>
+                    
+                    <div style="flex: 0.70;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT NUMBER</label>
+                        <input type="text" id="edit-vat-no" class="form-control form-control-sm text-uppercase global-vat-no" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+                                        
+                    <div style="flex: 0.65;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INVOICE DATE</label>
+                        <input type="date" id="edit-date" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV NUMBER</label>
+                        <input type="text" id="edit-invoice-number" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #f80303" required readonly>
+                    </div>                    
+            </div>
+
+                <!-- Second Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                    <div style="flex: 0.75;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">LPO NUMBER</label>
+                        <input type="text" id="edit-lpo" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; color:black; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CO NUMBER</label>
+                        <input type="text" id="edit-co-no" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <!-- PAYMENT TERM SELECTOR -->
+                     <div class="custom-combobox3 global-custom-combobox3" style="flex: 1.2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT TERMS</label>
+                        <input type="text" value="IMMEDIATE" placeholder="PAYMENT TERMS..." id="edit-payment-terms" class="form-control form-control-sm text-uppercase global-payment-terms" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                            <ul id="edit-terms-combo-list" class="dropdown-list global-terms-combo-list">
+                                <li data-value="IMMEDIATE">IMMEDIATE</li>
+                                <li data-value="100 %  ADVANCE">100 %  ADVANCE</li>
+                                <li data-value="50%  ADVANCE  50%  ON  DELIVERY">50%  ADVANCE  50%  ON  DELIVERY</li>
+                                <li data-value="CASH ON  DELIVERY">CASH ON  DELIVERY</li>
+                                <li data-value="30 DAYS PDC">30 DAYS PDC</li>
+                                <li data-value="60 DAYS PDC">60 DAYS PDC</li>
+                                <li data-value="90 DAYS PDC">90 DAYS PDC</li>
+                            </ul>
+                    </div>
+
+                    <div style="flex: 1;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CONTACT PERSON</label>
+                        <input type="text" id="edit-contact-person" class="form-control form-control-sm text-uppercase global-contact-person" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CONTACT NUMBER</label>
+                        <input type="text" id="edit-contact-number" class="form-control form-control-sm global-contact-number" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 2.4;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PROJECT NAME</label>
+                        <input type="text" id="edit-project-name" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DELIVERY DATE</label>
+                        <input type="date" id="edit-deldate" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black;color-scheme: dark;  border: 1px solid #03a3ff;">
+                    </div>                    
+            </div>
+
+                <!-- THIRD Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">OUR CONTACT</label>
+                        <input type="text" id="edit-our-contact" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">OUR NUMBER</label>
+                        <input type="text" id="edit-our-number" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div class="position-relative"  style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ITEM CODE</label>
+                        <input type="text" placeholder="ENTER CODE......."  id="edit-item-code" class="form-control form-control-sm text-uppercase global-item-code" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none global-item-code-autocomplete-results" id="edit-item-code-autocomplete-results" style="left:0; top: 100%;  z-index: 1090; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>                    
+                    </div>
+
+                    <!-- SALES BUTTON -->
+                      <div style="flex: 0.2.5; margin-top: 13px;">
+                        <!-- <label style="font-size: 10px; font-weight: 500; color: #000000; padding-bottom: 0; margin-bottom: 0; display: block;">SALE</label> -->
+                        <button type="button" class="btn btn-sm btn-success fw-bold shadow-sm">Sale</button>
+                      </div>
+
+                    <!-- product-autocomplete-results -->
+                    <div class="position-relative" style="flex: 2.4;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PRODUCTS</label>
+                        <input type="text" placeholder="ENTER PRODUCT NAME......." id="edit-products" class="form-control form-control-sm text-uppercase global-products" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none global-product-autocomplete-results" id="edit-product-autocomplete-results" style="left:0; top: 100%;  z-index: 1090; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+
+                    </div>
+
+                    <div style="flex: 0.35;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">QTY</label>
+                        <input type="number" value="1" id="edit-qty" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SIZE(mm)</label>
+                        <input type="text" id="edit-size" class="form-control form-control-sm global-i-size" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">RAL</label>
+                        <input type="text" id="edit-ral" class="form-control form-control-sm global-i-ral" style="padding: 0 0 0 2px; color:black;color-scheme: dark;  border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.4;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UNIT</label>
+                        <input type="text" id="edit-unit" class="form-control form-control-sm global-i-unit" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UNIT PRICE</label>
+                        <input type="text" value="0" id="edit-unit-price" class="form-control form-control-sm global-unit-price" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DIS %</label>
+                        <input type="text" value="0" id="edit-discount" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <div style="flex: 0.3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT %</label>
+                        <input type="text" value="5" id="edit-vat" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>                    
+            </div>
+
+                <!-- FORTH Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">TAXABLE</label>
+                        <input type="text" value="0" id="edit-taxable" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT TOTAL</label>
+                        <input type="text" value="0" id="edit-vat-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UNIT TOTAL</label>
+                        <input type="text" value="0" id="edit-unit-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DISC-AMT</label>
+                        <input type="text" value="0" id="edit-disc-amt" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">NOTES</label>
+                        <input type="text" id="edit-notes" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+                    
+                    <div style="flex: 0.40;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ICOST</label>
+                        <input type="text" value="0" id="edit-icost" class="form-control form-control-sm global-i-cost" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+                    
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UCOST</label>
+                        <input type="text" value="0"id="edit-ucost" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color:black;color-scheme: dark;  border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UMARGIN</label>
+                        <input type="text" value="0" id="edit-umargin" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SVALUE</label>
+                        <input type="text" value="0" id="edit-unit-svalue" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.4;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">TCOST</label>
+                        <input type="text" value="0" id="edit-tcost" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.4;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">TMARGIN</label>
+                        <input type="text" value="0" id="edit-tmargin" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+            </div>
+
+                <!-- FIFTH Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div style="flex: 0.40;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PID</label>
+                        <input type="text" id="edit-pid" class="form-control form-control-sm global-pid" style="text-align: center; padding: 0 0 0 2px; background-color: #949393; color: #ffffff; border: 1px solid #f80303;"readonly>
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">O STOCK</label>
+                        <input type="text" value="0" id="edit-o-stock" class="form-control form-control-sm global-o-stock" style="text-align: center; padding: 0 0 0 2px; background-color: #949393; color: #ffffff; border: 1px solid #f80303;"readonly >
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">A STOCK</label>
+                        <input type="text" value="0" id="edit-a-stock" class="form-control form-control-sm global-a-stock" style="text-align: center; padding: 0 0 0 2px; background-color: #a30010; color: #ffffff; border: 1px solid #f80303;" readonly >
+                    </div>
+                    
+                    <div style="flex: 5.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMOUNT IN WORDS</label>
+                        <input type="text" placeholder="AMOUNT IN WORDS DISPLAY HERE........" id="edit-amount-in-words" class="form-control form-control-sm" style="text-align: center; padding: 0 0 0 2px;font-size: 11px; font-weight: 500;  background-color: #949393; color: #ffffff; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.8;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SUB TOTAL</label>
+                        <input type="text" value="0.00" id="edit-taxable-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #ffffff; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT TOTAL</label>
+                        <input type="text" value="0.00" id="edit-total-vat" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #ffffff; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.8;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">GRAND TOTAL</label>
+                        <input type="text" value="0.00" id="edit-grand-total" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600; background-color: #949393; color: #e6ff01; border: 1px solid #f80303;" readonly>
+                    </div>
+                    
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAID</label>
+                        <input type="text" value="0.00" id="edit-paid-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #ffffff; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">BALANCE</label>
+                        <input type="text" value="0.00" id="edit-balance-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #ffffff; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.7;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">STATUS</label>
+                        <input type="text" value="Pending" id="edit-status-value" class="form-control form-control-sm" style="padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 500; background-color: #949393; color: #ffffff; border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <!-- ADD Buttons Box -->
+                    <div style="flex: 0.7; margin-top: 13px; text-align-last:center;"> 
+                        <button type="button" id="btn-add" class="btn btn-sm btn-primary w-60 fw-bold shadow-sm" style="width:100%;color: #ffffff;">ADD ITEM</button>
+                    </div>
+            </div>
+                
+
+                <!-- 📊 BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="editinvo-parent" style="max-height: 280px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="invoice-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    <th style="width: 5%;">ID</th>
+                                    <th style="width: 3%;">SrNo</th>
+                                    <th style="width: 23%;">Item Description</th>
+                                    <th style="width: 4%;" class="text-center">Qty</th>
+                                    <th style="width: 4%;" class="text-center">CN Qty</th>
+                                    <th style="width: 6%;" class="text-end">Size(mm)</th>
+                                    <th style="width: 5%;" class="text-end">RAL</th>
+                                    <th style="width: 5%;" class="text-end">Unit</th>
+                                    <th style="width: 6%;" class="text-end">Unit Price</th>
+                                    <th style="width: 6%;" class="text-end">Disc%</th>
+                                    <th style="width: 6%;" class="text-end">VAT%</th>
+                                    <th style="width: 6%;" class="text-end">Taxable</th>
+                                    <th style="width: 6%;" class="text-end">VAT Total</th>
+                                    <th style="width: 6%;" class="text-end">Unit Total</th>
+                                    <th style="width: 4%;" class="text-end">PID</th>
+                                    <th style="width: 4%;" class="text-end">Stock</th>
+                                    <th style="width: 5%;" class="text-end">ICost</th>
+                                    <th style="width: 6%;" class="text-end">UCost</th>
+                                    <th style="width: 6%;" class="text-end">SValue</th>
+                                    <th style="width: 6%;" class="text-end">UMargin</th>
+                                    <th style="width: 6%;" class="text-end">Status</th>
+                                    <th style="width: 5%;" class="text-end">Inv. No</th>
+                                    
+                                </tr>
+                            </thead>
+                            <tbody  class="global-modal-items-rows" id="inv-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->    
+
+<!-- #region 📌 CONTEXT MENU FOR EDIT INVOICE ITEM TABLE ROWS-->   
+   <div id="editinvo-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 999999; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <div class="editinvo-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit this Item</div>
+        <div class="editinvo-context-item" data-action="DELETE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Delete this Item</div>
+        <div class="editinvo-context-item" data-action="CREDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Create Credit Note</div>
+    </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .editinvo-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .editinvo-row-highlight-context { background-color: rgba(0, 149, 226, 0.15) !important; outline: 1px solid #0095e2; }
+    </style>
+<!-- #endregion -->
+
+<!-- #region 📌 PDC CLEAR MODAL ENGINE -->
+ <div id="pdcclear-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99998; align-items: center; justify-content: center; display: none;">
+
+     <div style="background: #ffffff; padding: 0; width: 70%; max-width: 70vw; height: 80%; max-height: 80vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- Modal Header Layout -->
+            <div id="pdcclear-modal-head" style="background: #8501ad; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">                 
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="pdcclear-modal-title">PDC INVOICE CLEAR</h4>                                 
+                    <div style="display: flex; justify-content: flex-end; gap: 30px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">   
+                        <span id="pdcclear-countdown-seconds" style="color: #ffffff; display: none;">30</span>                 
+                        <button type="button" id="btn-update-pdcclear" class="btn btn-sm btn-success px-4 fw-bold shadow-sm disabled" style="color: white;">Update</button> 
+                        <button type="button" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button>
+                                               
+                    </div>                
+            </div>
+            
+            <!-- Master Metadata Entry Form fields -->
+            <form  class="global-master-form" id="pdcclear-invoice-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!-- First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div style="flex: 3;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER NAME</label>
+                        <input type="text" id="pdcclear-customer" class="form-control form-control-sm" style="color: red; padding: 0 0 0 2px; font-size: 11px; font-weight: 600; border: 1px solid #f80303;" readonly>
+                        <!-- <ul class="list-group position-absolute w-100 start-0 shadow d-none" id="pdcclear-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul> -->
+                    </div>
+                    <!-- EMIRATE SELECTOR -->
+                        <div style="flex: 0.67">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATES</label>
+                        <input type="text"  id="pdcclear-emirate" class="form-control form-control-sm " style="color: red; padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600;border: 1px solid #f80303;" readonly>
+                    </div>
+
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV COUNT</label>
+                        <input type="text" id="pdcclear-count" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+
+            </div>
+
+            
+                <!-- SECOND Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PDC #</label>
+                        <input type="text" id="pdcclear-pdc-no" class="form-control form-control-sm" style="color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div> 
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">GRAND TOTAL</label>
+                        <input type="text" value="0.00" id="pdcclear-grand-total" class="form-control form-control-sm" style="color: red; padding: 0 0 0 2px; font-size: 11px; text-align: center; font-weight: 600; color: red; border: 1px solid #f80303;" readonly>
+                    </div>
+                    <div style="flex: 5.0;">
+                        <label style="font-size: 9px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">AMOUNT IN WORDS</label>
+                        <input type="text" placeholder="AMOUNT IN WORDS DISPLAY HERE........" id="pdcclear-amount-in-words" class="form-control form-control-sm" style="text-transform: uppercase; color: red; font-size: 11px; text-align: center; font-weight: 600; border: 1px solid #f80303" readonly>
+                    </div>
+            </div>
+                
+
+                <!-- 📊 BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="pdcclear-parent" style="max-height: 330px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="pdcclear-invoice-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="table-layout: auto; background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    
+                                    <th></th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Due Date</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Chq. Number</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Amount</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Invoice Date</th>
+                                    <th class="text-center" style="font-size: 14px; font-weight: bold;">Invoice Number</th>
+                                    
+                                    
+                                   
+                                    
+                                </tr>
+                            </thead>
+                            <tbody  class="global-modal-items-rows"  id="pdcclear-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->    
+
+<!-- #region 📌 DELIVERY NOTE MODAL ENGINE -->
+<div class="global-modal" id="do-modal-overlay" style="margin: 0; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 99998; align-items: center; justify-content: center; display: none;">
+     <div style="background: #ffffff; padding: 0; width: 72%; max-width: 72vw; height: 80%; max-height: 80vh; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">                   
+            
+        <!-- Modal Header Layout -->
+            <div id="do-modal-head" style="background: #630181; padding: 6px 4px; display: flex; justify-content: space-between; align-items: center;">                 
+                    <h4 style="color: #ffffff; margin: 0; font-size: 14px; font-weight: 500;" id="do-modal-title">Delivery Note</h4>                                 
+                    <div style="display: flex; justify-content: flex-end; gap: 30px; margin-top: 1px; padding-top: 3px; padding-bottom: 2px;">   
+                        <span  class="countdown-seconds" id="do-countdown-seconds" style="color: #ffffff; display: none;">30</span>                 
+                        <button type="button" id="btn-save-do" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" style="color: white;">Save</button> 
+                        <!-- <button type="button" class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel" style="color: white;">Cancel</button> -->
+                        <button type="button" onclick="forceResetModalLock('do-modal-overlay'); closeAppModal();"  class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel"  style="color:white;">Cancel</button>
+                       <!-- window.open('/deliveryorders', 'content-frame'); setActiveSidebarItem('/deliveryorders'); -->
+                    </div>                
+            </div>
+            
+            <!-- Master Metadata Entry Form fields -->
+            <form class="global-master-form" id="do-invoice-master-form" style="user-select: none; padding: 5px; display: flex; flex-direction: column; gap: 8px;">               
+               
+                <!-- First Row Fields -->
+            <div style="display: flex; gap: 4px; width: 100%;">
+
+                    <div class="position-relative" style="flex: 3;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CUSTOMER NAME</label>
+                        <input type="text" placeholder="ENTER CUSTOMER NAME....." id="do-customer" class="form-control form-control-sm text-uppercase global-customer" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                        <ul class="list-group position-absolute w-100 start-0 shadow d-none global-autocomplete-results" id="edit-autocomplete-results" style="z-index: 1050; max-height: 350px; overflow-y: auto; font-size: 12px; padding: 1px;"></ul>
+                    </div>
+
+                    <div style="flex: 0.45;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">POSTBOX</label>
+                        <input type="text" id="do-postbox" class="form-control form-control-sm text-uppercase global-postbox" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <!-- Emirate Selector -->
+                    <div class="custom-combobox1 global-custom-combobox1" style="flex: 0.7;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">EMIRATE</label>
+                        <input type="text" value="ABU DHABI" placeholder="ENTER EMIRATE......" id="do-emirate" class="form-control form-control-sm text-uppercase global-emirate" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                            <ul id="do-emirate-combo-list" class="dropdown-list global-emirate-combo-list">
+                                <li data-value="ABU DHABI">ABU DHABI</li>
+                                <li data-value="AJMAN">AJMAN</li>
+                                <li data-value="DUBAI">DUBAI</li>
+                                <li data-value="FUJAIRAH">FUJAIRAH</li>
+                                <li data-value="RAK">RAK</li>
+                                <li data-value="SHARJAH">SHARJAH</li>
+                                <li data-value="UAQ">UAQ</li>
+                            </ul>
+                    </div>
+
+                    <!-- address Selector -->
+                    <div class="custom-combobox2  global-custom-combobox2" style="flex: 2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ADDRESS</label>
+                        <input type="text" value="MUSSAFAH 32, ABU DHABI" placeholder="ENTER ADDRESS......" id="do-address" class="form-control form-control-sm text-uppercase global-address" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                            <ul id="do-address-combo-list" class="dropdown-list global-address-combo-list">
+                                <li data-value="MOHAMMED BIN ZAYED CITY, ABU DHABI">MOHAMMED BIN ZAYED CITY, ABU DHABI</li>
+                                <li data-value="MUSSAFAH, ABU DHABI">MUSSAFAH 32, ABU DHABI</li>
+                                <li data-value="BANIYAS, ABU DHABI">BANIYAS, ABU DHABI</li>
+                                <li data-value="AL SHAMKHA, ABU DHABI">AL SHAMKHA, ABU DHABI</li>
+                                <li data-value="AL SHAHAMA, ABU DHABI">AL SHAHAMA, ABU DHABI</li>
+                                <li data-value="CITY, ABU DHABI">CITY, ABU DHABI</li>
+                                
+                                <li data-value="AJMAN">AJMAN</li>
+                                <li data-value="DEIRA, DUBAI">DEIRA, DUBAI</li>
+                                <li data-value="BURDUBAI, DUBAI">BURDUBAI, DUBAI</li>
+                                <li data-value="JABEL ALI, DUBAI">JABEL ALI, DUBAI</li>
+                                <li data-value="DIP, DUBAI">DIP, DUBAI</li>
+                                <li data-value="DIC, DUBAI">DIC, DUBAI</li>
+                                <li data-value="FUJAIRAH">FUJAIRAH</li>
+                                <li data-value="RAK">RAK</li>
+                                <li data-value="SHARJAH">SHARJAH</li>
+                                <li data-value="UAQ">UAQ</li>
+                            </ul>
+                    </div>
+                    
+                    
+
+                                      
+            </div>
+
+                <!-- Second Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+                <div style="flex: 0.70;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">VAT NUMBER</label>
+                        <input type="text" id="do-vat-no" class="form-control form-control-sm text-uppercase global-vat-no" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+                                        
+                    <div style="flex: 0.65;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DN DATE</label>
+                        <input type="date" id="do-date" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                <div style="flex: 0.49;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DN NUMBER</label>
+                        <input type="text"  placeholder="AUTO CREATE" id="do-do-number" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #f80303" required readonly>
+                    </div>  
+                    <div style="flex: 0.49;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">INV NUMBER</label>
+                        <input type="text" id="do-invoice-no" class="form-control form-control-sm" style="color: red; text-align: center; border: 1px solid #f80303" required readonly>
+                    </div>  
+                    <div style="flex: 0.75;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">LPO NUMBER</label>
+                        <input type="text" id="do-lpo" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; color:black; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CO NUMBER</label>
+                        <input type="text" id="do-co-no" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+
+                    <!-- PAYMENT TERM SELECTOR -->
+                     <div class="custom-combobox3 global-custom-combobox3" style="flex: 1.2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">PAYMENT TERMS</label>
+                        <input type="text" value="IMMEDIATE" placeholder="PAYMENT TERMS..." id="do-payment-terms" class="form-control form-control-sm text-uppercase global-payment-terms" style=" padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                            <ul id="do-terms-combo-list" class="dropdown-list global-terms-combo-list">
+                                <li data-value="IMMEDIATE">IMMEDIATE</li>
+                                <li data-value="100 %  ADVANCE">100 %  ADVANCE</li>
+                                <li data-value="50%  ADVANCE  50%  ON  DELIVERY">50%  ADVANCE  50%  ON  DELIVERY</li>
+                                <li data-value="CASH ON  DELIVERY">CASH ON  DELIVERY</li>
+                                <li data-value="30 DAYS PDC">30 DAYS PDC</li>
+                                <li data-value="60 DAYS PDC">60 DAYS PDC</li>
+                                <li data-value="90 DAYS PDC">90 DAYS PDC</li>
+                            </ul>
+                    </div>
+
+                    
+
+                                  
+            </div>
+
+                <!-- THIRD Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+                <div style="flex: 1;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CONTACT PERSON</label>
+                        <input type="text" id="do-contact-person" class="form-control form-control-sm text-uppercase global-contact-person" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">CONTACT NUMBER</label>
+                        <input type="text" id="do-contact-number" class="form-control form-control-sm global-contact-number" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 2.4;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DELIVERY PLACE</label>
+                        <input type="text" id="do-delivery-place" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">DELIVERY DATE</label>
+                        <input type="date" id="do-deldate" class="form-control form-control-sm" style="padding: 0 0 0 2px; color:black;color-scheme: dark;  border: 1px solid #03a3ff;">
+                    </div>      
+            </div>
+
+                <!-- FORTH Row Fields -->
+            <div style="display: flex; gap: 5px; width: 100%;">
+
+                   
+                    <div style="flex: 0.6;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">OUR CONTACT</label>
+                        <input type="text" id="do-our-contact" class="form-control form-control-sm text-uppercase" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">OUR NUMBER</label>
+                        <input type="text" id="do-our-number" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;">
+                    </div>
+
+                    <div style="flex: 2;">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">NOTES</label>
+                        <input type="text" id="do-notes" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #fff; color: #000000; border: 1px solid #03a3ff;" required>
+                    </div>
+                    
+                    <!-- <div style="flex: 0.40;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">ICOST</label>
+                        <input type="text" value="0" id="do-icost" class="form-control form-control-sm global-i-cost" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+                    
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UCOST</label>
+                        <input type="text" value="0"id="do-ucost" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color:black;color-scheme: dark;  border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">UMARGIN</label>
+                        <input type="text" value="0" id="do-umargin" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.5;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">SVALUE</label>
+                        <input type="text" value="0" id="do-unit-svalue" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div> -->
+<!-- 
+                    <div style="flex: 0.4;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">TCOST</label>
+                        <input type="text" value="0" id="do-tcost" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div>
+
+                    <div style="flex: 0.4;" class="secret-field">
+                        <label style="font-size: 10px; font-weight: 500; color: #000000; margin-bottom: 2px; display: block;">TMARGIN</label>
+                        <input type="text" value="0" id="do-tmargin" class="form-control form-control-sm" style="padding: 0 0 0 2px; background-color: #949393; color: #000000; border: 1px solid #f80303;" required>
+                    </div> -->
+            </div>
+
+               <!-- 📊 BOTTOM AREA: HIGH-DENSITY ITEM BREAKDOWN MATRIX TABLE -->
+                <div style="margin-top: 4px;">
+                    
+
+                    <div id="do-parent" style="max-height: 280px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                        <table id="do-table" class="table table-sm table-bordered table-hover table-dense m-0 toggle-table" style="background: #ffffff;--bs-table-padding-y: 1px; --bs-table-padding-x: 1px; ">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    
+                                    <th style="width: 3%;">SrNo</th>
+                                    <th style="width: 23%;">Item Description</th>
+                                    <th style="width: 4%;" class="text-center">Qty</th>
+                                    <th style="width: 6%;" class="text-end">Size(mm)</th>
+                                    <th style="width: 5%;" class="text-end">RAL</th>
+                                    <th style="width: 5%;" class="text-end">Unit</th>
+                                    
+                                    
+                                </tr>
+                            </thead>
+                            <tbody  class="global-modal-items-rows" id="do-modal-items-rows">
+                                <!-- Pre-filled itemized nested rows insert here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                
+
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->    
+
+<!-- #region 📌 STATEMENT OF INVOICES MODAL-->
+    <div class="global-modal" id="statement-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: #ffffff; width: 60%; max-width: 60vw; border-radius: 6px; box-shadow: 0 10px 10px rgba(0,0,0,0.3); overflow: hidden; font-family: 'Segoe UI', sans-serif;">
+            
+            <!-- Modal Header -->
+            <div style="background: #9302cc; padding: 5px 5px; display: flex; justify-content: space-between; align-items: center;">
+                <h4  id="statement-title-text" style="color: #ffffff; margin: 0; font-size: 12px; font-weight: 600; text-align: center;">STATEMENT OF INVOICES</h4>
+                <!-- <button type="button" class="btn-cancel" style="background: none; border: none; color: #a2a3b7; font-size: 20px; cursor: pointer; line-height: 1;">&times;</button> -->
+            </div>
+            
+            <!-- Modal Form Body -->
+            <form class="global-master-form"  id="statement-transaction-form" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div class="statement-fields">
+                <div style="display: flex; gap: 5px;">
+                <div style="flex: 2.8;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">CUSTOMER NAME</label>
+                        <input type="text" style="font-weight: 700;" id="statement-customer" class="form-control form-control-sm" readonly>
+                </div>
+                <div style="flex: 0.45;">
+                    <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;"> EMIRATE</label>
+                    <input type="text" style="color: #000000; font-weight: 700;" id="statement-emirate" class="form-control form-control-sm" readonly>
+                </div>
+                </div>
+
+                <div style="display: flex; gap: 5px;">
+                <div style="flex: 0.53;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">STATEMENT DATE</label>
+                        <input type="date" style="color: #000000; font-weight: 700;" id="statement-date" class="form-control form-control-sm" required>
+                </div>
+                <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #02b15f; display: block; margin-bottom: 4px;">DURATION</label>
+                        <select id="statement-duration-select" style="color: #000000; font-weight: 700;" class="form-control form-control-sm form-select form-select-sm">
+                            <option value="3MONTHS" selected>Last 3 Months</option>
+                            <option value="CURRENT_MONTH">Current Month</option>
+                            <option value="LAST_MONTH">Last Month</option>
+                            <option value="2MONTHS">Last 2 Months</option>
+                            <option value="6MONTHS">Last 6 Months</option>
+                            <option value="CURRENT_YEAR">Current Year</option>
+                            <option value="FULL">All History</option>
+                        </select>
+                    </div>
+                <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">FROM DATE</label>
+                        <input type="date" style="color: #000000; font-weight: 700;" id="statement-from-date" class="form-control form-control-sm" required>
+                </div>
+                <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #000000; display: block; margin-bottom: 4px;">TO DATE</label>
+                        <input type="date" style="color: #000000; font-weight: 700;" id="statement-to-date" class="form-control form-control-sm" required>
+                </div>
+               
+                    <div style="flex: 0.5;">
+                        <label style="font-size: 9px; font-weight: 700; color: #02b15f; display: block; margin-bottom: 4px;">TYPE</label>
+                        <select id="statement-type-select" style="color: #000000; font-weight: 700;" class="form-control form-control-sm form-select form-select-sm">
+                            <option value="All">All</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Pending">Pending</option>
+                            <option value="AdvPaid">Adv. Paid</option>
+                            <option value="PDC">PDC</option>
+                        </select>
+                    </div>
+                
+                </div>
+
+                </div>
+                <!-- Footer Save Buttons -->
+                <div class="statement-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                    <button type="button" onclick="closeAppModal();"  class="btn btn-sm btn-danger shadow-sm px-3 fw-semibold btn-cancel"  style="color:white; font-size: 10px; font-weight: 600;">Cancel</button>
+                    <!-- <button type="button" class="btn btn-sm btn-danger border px-3 fw-semibold  btn-cancel ">Cancel</button> -->
+                    <button type="button" id="statement-btn-update" style="color:white; font-size: 10px; font-weight: 600;" class="btn btn-sm btn-success px-4 fw-bold shadow-sm"  >Statement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<!-- #endregion -->
+
+<!-- #region 📌 CONTEXT MENU FOR DELIVERY NOTE MODAL -->   
+   <div id="do-context-menu" style="display: none; position: fixed; background: #1e1e2d; border: 1px solid #2d2d44; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-radius: 4px; padding: 2px 0; z-index: 999999; width: 180px; font-family: 'Segoe UI', sans-serif;">
+        <div class="do-context-item" data-action="EDIT" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Edit this Item</div>
+        <div class="do-context-item" data-action="DELETE" style="color: #2ec4b6; padding: 3px 5px; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;">Delete this Item</div>
+   </div>
+    <!-- Style overrides for hover interactions -->
+    <style>
+        .do-context-item:hover { background-color: #151521; color: #ffffff !important; }
+        /* Add a visual marker to rows that are currently right-clicked */
+        .do-row-highlight-context { background-color: rgba(0, 149, 226, 0.15) !important; outline: 1px solid #0095e2; }
+    </style>
+<!-- #endregion -->
+
+
+<script src="to_words_lib.js"></script>
+<script src="common.js" defer></script>
+
+<script>
+// Mobile-only filter visibility; filter values and existing handlers stay intact.
+(() => {
+  const button = document.querySelector('.ledger-filter-toggle');
+  const filters = document.getElementById('ledger-filters');
+  if (!button || !filters) return;
+  const smallScreen = window.matchMedia('(max-width: 767px)');
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle('ledger-filters-collapsed', collapsed);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? 'Show filters' : 'Hide filters');
+    button.title = collapsed ? 'Show filters' : 'Hide filters';
+  }
+  button.addEventListener('click', () => {
+    if (smallScreen.matches) setCollapsed(!document.body.classList.contains('ledger-filters-collapsed'));
+  });
+  smallScreen.addEventListener('change', () => setCollapsed(smallScreen.matches));
+  setCollapsed(smallScreen.matches);
+})();
+</script>
+
+</body>
+</html>
